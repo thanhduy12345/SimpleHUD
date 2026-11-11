@@ -1,4 +1,4 @@
-package com.example.simplehud;
+package com.example.client;
 
 public class SimpleModule {
     private final String name;
