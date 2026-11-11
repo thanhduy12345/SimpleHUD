@@ -38,7 +38,7 @@ public class SimpleHUDClient implements ClientModInitializer {
                 "key.simplehud.clickgui",
                 InputConstants.Type.KEYSYM,
                 GLFW.GLFW_KEY_RIGHT_SHIFT,
-                "category.simplehud"
+                KeyMapping.Category.MISC
         ));
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {

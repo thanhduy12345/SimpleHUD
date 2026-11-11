@@ -2,6 +2,7 @@ package com.example.client;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 
 public class ClickGuiScreen extends Screen {
@@ -67,8 +68,11 @@ public class ClickGuiScreen extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button == 0) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean isDoubleClick) {
+        if (event.button() == 0) {
+            double mouseX = event.x();
+            double mouseY = event.y();
+
             if (mouseX >= panelX && mouseX <= panelX + panelWidth
                     && mouseY >= panelY && mouseY <= panelY + headerHeight) {
                 isDragging = true;
@@ -87,15 +91,15 @@ public class ClickGuiScreen extends Screen {
                 currentY += itemHeight;
             }
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, isDoubleClick);
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        if (button == 0) {
+    public boolean mouseReleased(MouseButtonEvent event) {
+        if (event.button() == 0) {
             isDragging = false;
         }
-        return super.mouseReleased(mouseX, mouseY, button);
+        return super.mouseReleased(event);
     }
 
     @Override
