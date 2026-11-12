@@ -36,7 +36,6 @@ public class SimpleHUDClient implements ClientModInitializer {
     public static final List<SimpleModule> MODULES = new ArrayList<>();
     public static final List<SimpleModule> HUD_ELEMENTS = new ArrayList<>();
 
-    // Các Module chính
     public static final SimpleModule MASTER_HUD = new SimpleModule("HUD", true);
     public static final SimpleModule TOGGLE_SPRINT = new SimpleModule("Sprint", true);
     public static final SimpleModule STORAGE_ESP = new SimpleModule("Storage ESP", true);
@@ -45,7 +44,6 @@ public class SimpleHUDClient implements ClientModInitializer {
     public static final SimpleModule OG_DEBUG = new SimpleModule("OG Debug", true);
     public static final SimpleModule SKELLY_DEBUG = new SimpleModule("Skelly Debug", true);
 
-    // Các tùy chọn con của HUD
     public static final SimpleModule WATERMARK = new SimpleModule("Watermark", true);
     public static final SimpleModule INFO_HUD = new SimpleModule("Info", true);
     public static final SimpleModule TIME_HUD = new SimpleModule("Time", true);
@@ -53,7 +51,6 @@ public class SimpleHUDClient implements ClientModInitializer {
     public static final SimpleModule ARRAY_LIST = new SimpleModule("Modules", true);
     public static final SimpleModule RAINBOW_HUD = new SimpleModule("Rainbow", false);
 
-    // Đặt kích thước mặc định thành 0.8f
     public static float hudScale = 0.8f;
     public static int cornerRadius = 2;
 
@@ -84,7 +81,6 @@ public class SimpleHUDClient implements ClientModInitializer {
         HUD_ELEMENTS.add(ARRAY_LIST);
         HUD_ELEMENTS.add(RAINBOW_HUD);
 
-        // Tải lại cài đặt đã lưu từ lần chơi trước
         loadConfig();
 
         openGuiKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
@@ -108,7 +104,6 @@ public class SimpleHUDClient implements ClientModInitializer {
         HudRenderCallback.EVENT.register(this::renderHud);
     }
 
-    // Hàm lưu toàn bộ thông số vào tệp config/simplehud.properties
     public static void saveConfig() {
         try {
             Properties props = new Properties();
@@ -130,7 +125,6 @@ public class SimpleHUDClient implements ClientModInitializer {
         }
     }
 
-    // Hàm đọc lại thông số đã lưu khi mở game
     public static void loadConfig() {
         if (!Files.exists(CONFIG_PATH)) {
             return;
@@ -157,8 +151,7 @@ public class SimpleHUDClient implements ClientModInitializer {
         } catch (Exception ignored) {
         }
     }
-
-    public static Component styledText(String text) {
+        public static Component styledText(String text) {
         return Component.literal(text).withStyle(style -> style.withFont(CUSTOM_FONT));
     }
 
@@ -182,7 +175,6 @@ public class SimpleHUDClient implements ClientModInitializer {
         graphics.pose().pushMatrix();
         graphics.pose().scale(hudScale, hudScale);
 
-        // 1. WATERMARK
         if (WATERMARK.isEnabled()) {
             Component wmComp = styledText("KRYPTON+");
             int wmWidth = font.width(wmComp);
@@ -190,9 +182,8 @@ public class SimpleHUDClient implements ClientModInitializer {
 
             drawFullRoundedRect(graphics, 5, 5, 5 + wmWidth + 14, 20, cornerRadius, BG_COLOR);
             graphics.drawString(font, wmComp, 12, 9, wmColor, false);
+        }
 
-
-        // 2. SYSTEM INFO: FPS | PING | SERVER IP
         if (INFO_HUD.isEnabled()) {
             Component fpsComp = styledText("FPS: " + client.getFps() + "  ");
             Component pingComp = styledText(getPingInfo(client));
@@ -212,8 +203,8 @@ public class SimpleHUDClient implements ClientModInitializer {
             graphics.drawString(font, fpsComp, 12, 28, fpsColor, false);
             graphics.drawString(font, pingComp, 12 + w1, 28, pingColor, false);
             graphics.drawString(font, ipComp, 12 + w1 + w2, 28, ipColor, false);
+        }
 
-        // 3. TIME
         if (TIME_HUD.isEnabled()) {
             Component timeComp = styledText(TIME_FORMATTER.format(new Date()));
             int timeW = font.width(timeComp);
@@ -222,9 +213,8 @@ public class SimpleHUDClient implements ClientModInitializer {
 
             drawFullRoundedRect(graphics, centerX - (timeW / 2) - 8, 5, centerX + (timeW / 2) + 8, 20, 7, BG_COLOR);
             graphics.drawString(font, timeComp, centerX - (timeW / 2), 9, timeColor, false);
+        }
 
-
-        // 4. COORDINATES
         if (COORDINATES.isEnabled()) {
             double x = client.player.getX();
             double y = client.player.getY();
@@ -245,8 +235,8 @@ public class SimpleHUDClient implements ClientModInitializer {
 
             drawFullRoundedRect(graphics, 5, screenHeight - 20, 5 + coordW + 14, screenHeight - 5, cornerRadius, BG_COLOR);
             graphics.drawString(font, coordComp, 12, screenHeight - 16, coordColor, false);
-                }
-        // 5. MODULE LIST
+        }
+
         if (ARRAY_LIST.isEnabled()) {
             List<SimpleModule> enabledModules = new ArrayList<>();
             for (SimpleModule mod : MODULES) {
@@ -278,12 +268,12 @@ public class SimpleHUDClient implements ClientModInitializer {
                     float ratio = total > 1 ? (float) i / (float) (total - 1) : 0.0f;
                     color = blendColors(PRIMARY_COLOR, SECONDARY_COLOR, ratio).getRGB();
                 }
+
                 drawFullRoundedRect(graphics, boxLeft, rightY, boxRight, rightY + boxHeight, cornerRadius, BG_COLOR);
                 graphics.drawString(font, nameComp, boxLeft + 4, rightY + 3, color, false);
 
                 int lineEndY = (i == total - 1) ? (rightY + boxHeight) : (rightY + boxHeight + gap);
                 graphics.fill(barLeft, rightY, barRight, lineEndY, color);
-
 
                 rightY += boxHeight + gap;
             }
@@ -291,9 +281,8 @@ public class SimpleHUDClient implements ClientModInitializer {
 
         graphics.pose().popMatrix();
     }
-}
-    private void drawFullRoundedRect(GuiGraphics graphics, int x1, int y1, int x2, int y2, int radius, int color) {
 
+    private void drawFullRoundedRect(GuiGraphics graphics, int x1, int y1, int x2, int y2, int radius, int color) {
         int width = x2 - x1;
         int height = y2 - y1;
         int r = Math.min(radius, Math.min(width / 2, height / 2));
@@ -333,4 +322,4 @@ public class SimpleHUDClient implements ClientModInitializer {
         int b = Mth.clamp((int) (c1.getBlue() + (c2.getBlue() - c1.getBlue()) * ratio), 0, 255);
         return new Color(r, g, b, 255);
     }
-}
+                }
