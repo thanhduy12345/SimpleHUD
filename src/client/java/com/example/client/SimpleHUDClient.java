@@ -151,7 +151,7 @@ public class SimpleHUDClient implements ClientModInitializer {
         } catch (Exception ignored) {
         }
     }
-        public static Component styledText(String text) {
+    public static Component styledText(String text) {
         return Component.literal(text).withStyle(style -> style.withFont(CUSTOM_FONT));
     }
 
@@ -181,7 +181,7 @@ public class SimpleHUDClient implements ClientModInitializer {
             int wmColor = isRainbow ? getRainbowColor(0) : PRIMARY_COLOR.getRGB();
 
             drawFullRoundedRect(graphics, 5, 5, 5 + wmWidth + 14, 20, cornerRadius, BG_COLOR);
-            graphics.drawString(font, wmComp, 12, 9, wmColor, false);
+            graphics.drawString(font, wmComp, 12, 9, wmColor, true);
         }
 
         if (INFO_HUD.isEnabled()) {
@@ -200,9 +200,9 @@ public class SimpleHUDClient implements ClientModInitializer {
             int ipColor = isRainbow ? getRainbowColor(600) : new Color(210, 210, 210, 255).getRGB();
 
             drawFullRoundedRect(graphics, 5, 24, 5 + totalW + 14, 39, cornerRadius, BG_COLOR);
-            graphics.drawString(font, fpsComp, 12, 28, fpsColor, false);
-            graphics.drawString(font, pingComp, 12 + w1, 28, pingColor, false);
-            graphics.drawString(font, ipComp, 12 + w1 + w2, 28, ipColor, false);
+            graphics.drawString(font, fpsComp, 12, 28, fpsColor, true);
+            graphics.drawString(font, pingComp, 12 + w1, 28, pingColor, true);
+            graphics.drawString(font, ipComp, 12 + w1 + w2, 28, ipColor, true);
         }
 
         if (TIME_HUD.isEnabled()) {
@@ -212,7 +212,7 @@ public class SimpleHUDClient implements ClientModInitializer {
             int timeColor = isRainbow ? getRainbowColor(300) : PRIMARY_COLOR.getRGB();
 
             drawFullRoundedRect(graphics, centerX - (timeW / 2) - 8, 5, centerX + (timeW / 2) + 8, 20, 7, BG_COLOR);
-            graphics.drawString(font, timeComp, centerX - (timeW / 2), 9, timeColor, false);
+            graphics.drawString(font, timeComp, centerX - (timeW / 2), 9, timeColor, true);
         }
 
         if (COORDINATES.isEnabled()) {
@@ -234,7 +234,7 @@ public class SimpleHUDClient implements ClientModInitializer {
             int coordColor = isRainbow ? getRainbowColor(500) : PRIMARY_COLOR.getRGB();
 
             drawFullRoundedRect(graphics, 5, screenHeight - 20, 5 + coordW + 14, screenHeight - 5, cornerRadius, BG_COLOR);
-            graphics.drawString(font, coordComp, 12, screenHeight - 16, coordColor, false);
+            graphics.drawString(font, coordComp, 12, screenHeight - 16, coordColor, true);
         }
 
         if (ARRAY_LIST.isEnabled()) {
@@ -270,7 +270,7 @@ public class SimpleHUDClient implements ClientModInitializer {
                 }
 
                 drawFullRoundedRect(graphics, boxLeft, rightY, boxRight, rightY + boxHeight, cornerRadius, BG_COLOR);
-                graphics.drawString(font, nameComp, boxLeft + 4, rightY + 3, color, false);
+                graphics.drawString(font, nameComp, boxLeft + 4, rightY + 3, color, true);
 
                 int lineEndY = (i == total - 1) ? (rightY + boxHeight) : (rightY + boxHeight + gap);
                 graphics.fill(barLeft, rightY, barRight, lineEndY, color);
@@ -322,4 +322,5 @@ public class SimpleHUDClient implements ClientModInitializer {
         int b = Mth.clamp((int) (c1.getBlue() + (c2.getBlue() - c1.getBlue()) * ratio), 0, 255);
         return new Color(r, g, b, 255);
     }
-                }
+                                                                         }
+            
