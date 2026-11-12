@@ -12,7 +12,9 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.chat.FontDescription;
+import net.minecraft.resources.Identifier;
+
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import org.lwjgl.glfw.GLFW;
@@ -38,7 +40,8 @@ public class SimpleHUDClient implements ClientModInitializer {
     public static int cornerRadius = 7;
 
     // Đường dẫn phông chữ riêng chỉ áp dụng cho mod SimpleHUD
-    public static final ResourceLocation CUSTOM_FONT = ResourceLocation.fromNamespaceAndPath("simplehud", "custom");
+        public static final FontDescription CUSTOM_FONT = new FontDescription.Resource(Identifier.fromNamespaceAndPath("simplehud", "custom"));
+
 
     private static final SimpleDateFormat TIME_FORMATTER = new SimpleDateFormat("HH:mm:ss");
     private static final Color PRIMARY_COLOR = new Color(65, 185, 255, 255);
