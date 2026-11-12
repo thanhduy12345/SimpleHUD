@@ -169,11 +169,11 @@ public class SimpleHUDClient implements ClientModInitializer {
             int invY = screenHeight - 70;
             graphics.fill(invX - 2, invY - 2, invX + 162, invY + 54, bgDark);
 
-            NonNullList<ItemStack> items = client.player.getInventory().items;
             for (int row = 0; row < 3; row++) {
                 for (int col = 0; col < 9; col++) {
                     int slotIndex = 9 + row * 9 + col;
-                    ItemStack stack = items.get(slotIndex);
+                    ItemStack stack = client.player.getInventory().getItem(slotIndex);
+                    
                     if (!stack.isEmpty()) {
                         int itemX = invX + col * 18;
                         int itemY = invY + row * 18;
