@@ -245,7 +245,7 @@ public class SimpleHUDClient implements ClientModInitializer {
 
             drawFullRoundedRect(graphics, 5, screenHeight - 20, 5 + coordW + 14, screenHeight - 5, cornerRadius, BG_COLOR);
             graphics.drawString(font, coordComp, 12, screenHeight - 16, coordColor, false);
-
+                }
         // 5. MODULE LIST
         if (ARRAY_LIST.isEnabled()) {
             List<SimpleModule> enabledModules = new ArrayList<>();
@@ -291,7 +291,6 @@ public class SimpleHUDClient implements ClientModInitializer {
 
                 graphics.pose().popMatrix();
     }
-}
 
         private void drawFullRoundedRect(GuiGraphics graphics, int x1, int y1, int x2, int y2, int radius, int color) {
         int width = x2 - x1;
