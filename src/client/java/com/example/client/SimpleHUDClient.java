@@ -29,11 +29,15 @@ import java.util.List;
 public class SimpleHUDClient implements ClientModInitializer {
 
     public static final List<SimpleModule> MODULES = new ArrayList<>();
+    public static final List<SimpleModule> HUD_ELEMENTS = new ArrayList<>();
+
+    public static final SimpleModule MASTER_HUD = new SimpleModule("HUD", true);
+    public static final SimpleModule TOGGLE_SPRINT = new SimpleModule("Sprint", true);
+
     public static final SimpleModule WATERMARK = new SimpleModule("Watermark", true);
     public static final SimpleModule INFO_HUD = new SimpleModule("Info", true);
     public static final SimpleModule TIME_HUD = new SimpleModule("Time", true);
     public static final SimpleModule COORDINATES = new SimpleModule("Coordinates", true);
-    public static final SimpleModule TOGGLE_SPRINT = new SimpleModule("Sprint", true);
     public static final SimpleModule ARRAY_LIST = new SimpleModule("Modules", true);
 
     public static float hudScale = 1.25f;
@@ -53,12 +57,14 @@ public class SimpleHUDClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-        MODULES.add(WATERMARK);
-        MODULES.add(INFO_HUD);
-        MODULES.add(TIME_HUD);
-        MODULES.add(COORDINATES);
+        MODULES.add(MASTER_HUD);
         MODULES.add(TOGGLE_SPRINT);
-        MODULES.add(ARRAY_LIST);
+
+        HUD_ELEMENTS.add(WATERMARK);
+        HUD_ELEMENTS.add(INFO_HUD);
+        HUD_ELEMENTS.add(TIME_HUD);
+        HUD_ELEMENTS.add(COORDINATES);
+        HUD_ELEMENTS.add(ARRAY_LIST);
 
         openGuiKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
                 "key.simplehud.clickgui",
@@ -88,8 +94,7 @@ public class SimpleHUDClient implements ClientModInitializer {
 
     private void renderHud(GuiGraphics graphics, DeltaTracker deltaTracker) {
         Minecraft client = Minecraft.getInstance();
-        if (client.player == null || client.options.hideGui) {
-            return;
+        if (client.player == null || client.options.hideGui || !MASTER_HUD.isEnabled()) {            return;
         }
 
         Font font = client.font;
