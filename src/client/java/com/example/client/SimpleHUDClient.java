@@ -38,6 +38,8 @@ public class SimpleHUDClient implements ClientModInitializer {
 
     public static final SimpleModule MASTER_HUD = new SimpleModule("HUD", true);
     public static final SimpleModule TOGGLE_SPRINT = new SimpleModule("Sprint", true);
+    public static final SimpleModule FULLBRIGHT = new SimpleModule("Fullbright", true);
+    
     public static final SimpleModule STORAGE_ESP = new SimpleModule("Storage ESP", true);
     public static final SimpleModule PLAYER_ESP = new SimpleModule("Player ESP", true);
     public static final SimpleModule OG_CHUNK_FINDER = new SimpleModule("OG Chunk Finder", true);
@@ -68,6 +70,8 @@ public class SimpleHUDClient implements ClientModInitializer {
     public void onInitializeClient() {
         MODULES.add(MASTER_HUD);
         MODULES.add(TOGGLE_SPRINT);
+        MODULES.add(FULLBRIGHT);
+        
         MODULES.add(STORAGE_ESP);
         MODULES.add(PLAYER_ESP);
         MODULES.add(OG_CHUNK_FINDER);
