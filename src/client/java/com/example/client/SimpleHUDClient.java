@@ -143,13 +143,13 @@ public class SimpleHUDClient implements ClientModInitializer {
 
             if (client.level != null) {
                 if (client.level.dimension() == Level.NETHER) {
-                    altCoords = String.format(" [%.1f, %.1f]", x * 8.0, z * 8.0);
+                    altCoords = String.format(" (%.1f, %.1f)", x * 8.0, z * 8.0);
                 } else if (client.level.dimension() == Level.OVERWORLD) {
-                    altCoords = String.format(" [%.1f, %.1f]", x / 8.0, z / 8.0);
+                    altCoords = String.format(" (%.1f, %.1f)", x / 8.0, z / 8.0);
                 }
             }
 
-            Component coordComp = styledText(String.format("X: %.1f | Y: %.1f | Z: %.1f%s", x, y, z, altCoords));
+            Component coordComp = styledText(String.format("X: %.1f  Y: %.1f  Z: %.1f%s", x, y, z, altCoords));
             int coordW = font.width(coordComp);
 
             drawFullRoundedRect(graphics, 5, screenHeight - 20, 5 + coordW + 14, screenHeight - 5, cornerRadius, BG_COLOR);
