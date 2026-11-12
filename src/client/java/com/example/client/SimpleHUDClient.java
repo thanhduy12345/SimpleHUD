@@ -37,7 +37,8 @@ public class SimpleHUDClient implements ClientModInitializer {
     public static final SimpleModule ARRAY_LIST = new SimpleModule("Modules", true);
 
     public static float hudScale = 1.25f;
-    public static int cornerRadius = 7;
+    public static int cornerRadius = 2; 
+    
 
     // Đường dẫn phông chữ riêng chỉ áp dụng cho mod SimpleHUD
         public static final FontDescription CUSTOM_FONT = new FontDescription.Resource(Identifier.fromNamespaceAndPath("simplehud", "custom"));
@@ -168,7 +169,6 @@ public class SimpleHUDClient implements ClientModInitializer {
 
             int rightY = 5;
             int boxHeight = 13;
-            int smallRadius = 2;
             int total = enabledModules.size();
 
             for (int i = 0; i < total; i++) {
@@ -182,7 +182,8 @@ public class SimpleHUDClient implements ClientModInitializer {
                 float ratio = total > 1 ? (float) i / (float) (total - 1) : 0.0f;
                 int color = blendColors(PRIMARY_COLOR, SECONDARY_COLOR, ratio).getRGB();
 
-                drawFullRoundedRect(graphics, boxLeft, rightY, boxRight, rightY + boxHeight, smallRadius, BG_COLOR);
+                drawFullRoundedRect(graphics, boxLeft, rightY, boxRight, rightY + boxHeight, cornerRadius, BG_COLOR);
+                
                 graphics.drawString(font, nameComp, boxLeft + 4, rightY + 3, color);
 
                 rightY += boxHeight + 2;
