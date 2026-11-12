@@ -189,8 +189,8 @@ public class SimpleHUDClient implements ClientModInitializer {
             int wmColor = isRainbow ? getRainbowColor(0) : PRIMARY_COLOR.getRGB();
 
             drawFullRoundedRect(graphics, 5, 5, 5 + wmWidth + 14, 20, cornerRadius, BG_COLOR);
-            graphics.drawString(font, wmComp, 12, 9, wmColor);
-        }
+            graphics.drawString(font, wmComp, 12, 9, wmColor, false);
+
 
         // 2. SYSTEM INFO: FPS | PING | SERVER IP
         if (INFO_HUD.isEnabled()) {
@@ -209,10 +209,9 @@ public class SimpleHUDClient implements ClientModInitializer {
             int ipColor = isRainbow ? getRainbowColor(600) : new Color(210, 210, 210, 255).getRGB();
 
             drawFullRoundedRect(graphics, 5, 24, 5 + totalW + 14, 39, cornerRadius, BG_COLOR);
-            graphics.drawString(font, fpsComp, 12, 28, fpsColor);
-            graphics.drawString(font, pingComp, 12 + w1, 28, pingColor);
-            graphics.drawString(font, ipComp, 12 + w1 + w2, 28, ipColor);
-        }
+            graphics.drawString(font, fpsComp, 12, 28, fpsColor, false);
+            graphics.drawString(font, pingComp, 12 + w1, 28, pingColor, false);
+            graphics.drawString(font, ipComp, 12 + w1 + w2, 28, ipColor, false);
 
         // 3. TIME
         if (TIME_HUD.isEnabled()) {
@@ -222,8 +221,8 @@ public class SimpleHUDClient implements ClientModInitializer {
             int timeColor = isRainbow ? getRainbowColor(300) : PRIMARY_COLOR.getRGB();
 
             drawFullRoundedRect(graphics, centerX - (timeW / 2) - 8, 5, centerX + (timeW / 2) + 8, 20, 7, BG_COLOR);
-            graphics.drawString(font, timeComp, centerX - (timeW / 2), 9, timeColor);
-        }
+            graphics.drawString(font, timeComp, centerX - (timeW / 2), 9, timeColor, false);
+
 
         // 4. COORDINATES
         if (COORDINATES.isEnabled()) {
@@ -245,8 +244,7 @@ public class SimpleHUDClient implements ClientModInitializer {
             int coordColor = isRainbow ? getRainbowColor(500) : PRIMARY_COLOR.getRGB();
 
             drawFullRoundedRect(graphics, 5, screenHeight - 20, 5 + coordW + 14, screenHeight - 5, cornerRadius, BG_COLOR);
-            graphics.drawString(font, coordComp, 12, screenHeight - 16, coordColor);
-        }
+            graphics.drawString(font, coordComp, 12, screenHeight - 16, coordColor, false);
 
         // 5. MODULE LIST
         if (ARRAY_LIST.isEnabled()) {
@@ -280,12 +278,12 @@ public class SimpleHUDClient implements ClientModInitializer {
                     float ratio = total > 1 ? (float) i / (float) (total - 1) : 0.0f;
                     color = blendColors(PRIMARY_COLOR, SECONDARY_COLOR, ratio).getRGB();
                 }
-
                 drawFullRoundedRect(graphics, boxLeft, rightY, boxRight, rightY + boxHeight, cornerRadius, BG_COLOR);
-                graphics.drawString(font, nameComp, boxLeft + 4, rightY + 3, color);
+                graphics.drawString(font, nameComp, boxLeft + 4, rightY + 3, color, false);
 
                 int lineEndY = (i == total - 1) ? (rightY + boxHeight) : (rightY + boxHeight + gap);
                 graphics.fill(barLeft, rightY, barRight, lineEndY, color);
+
 
                 rightY += boxHeight + gap;
             }
