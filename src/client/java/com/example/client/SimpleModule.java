@@ -16,7 +16,10 @@ public class SimpleModule {
     public boolean isEnabled() {
         return enabled;
     }
-
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+    
     public void toggle() {
         this.enabled = !this.enabled;
     }
