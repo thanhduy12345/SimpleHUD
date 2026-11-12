@@ -11,37 +11,40 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.multiplayer.PlayerInfo;
-import net.minecraft.core.NonNullList;
-import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
+import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import org.lwjgl.glfw.GLFW;
 
 import java.awt.Color;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 
 public class SimpleHUDClient implements ClientModInitializer {
 
     public static final List<SimpleModule> MODULES = new ArrayList<>();
-    public static final SimpleModule WATERMARK = new SimpleModule("ServerStats", true);
-    public static final SimpleModule ARMOR_HUD = new SimpleModule("ArmorHUD", true);
+    public static final SimpleModule WATERMARK = new SimpleModule("Watermark", true);
+    public static final SimpleModule INFO_HUD = new SimpleModule("Info", true);
+    public static final SimpleModule TIME_HUD = new SimpleModule("Time", true);
     public static final SimpleModule COORDINATES = new SimpleModule("Coordinates", true);
-    public static final SimpleModule INV_PREVIEW = new SimpleModule("InventoryHUD", true);
     public static final SimpleModule TOGGLE_SPRINT = new SimpleModule("Sprint", true);
-    public static final SimpleModule ARRAY_LIST = new SimpleModule("HUD", true);
+    public static final SimpleModule ARRAY_LIST = new SimpleModule("Modules", true);
+
+    private static final SimpleDateFormat TIME_FORMATTER = new SimpleDateFormat("HH:mm:ss");
+    private static final Color PRIMARY_COLOR = new Color(65, 185, 255, 255);
+    private static final Color SECONDARY_COLOR = new Color(255, 110, 230, 255);
+    private static final int BG_COLOR = new Color(35, 35, 35, 204).getRGB();
 
     private static KeyMapping openGuiKey;
 
     @Override
     public void onInitializeClient() {
         MODULES.add(WATERMARK);
-        MODULES.add(ARMOR_HUD);
+        MODULES.add(INFO_HUD);
+        MODULES.add(TIME_HUD);
         MODULES.add(COORDINATES);
-        MODULES.add(INV_PREVIEW);
         MODULES.add(TOGGLE_SPRINT);
         MODULES.add(ARRAY_LIST);
 
@@ -76,71 +79,64 @@ public class SimpleHUDClient implements ClientModInitializer {
         int screenWidth = graphics.guiWidth();
         int screenHeight = graphics.guiHeight();
 
-        // Màu sắc chuẩn theo ảnh mẫu
-        int bgDark = 0x85000000;
-        int goldColor = 0xFFFFAA00;
-        int lightGold = 0xFFFFD700;
-        int whiteColor = 0xFFFFFFFF;
-        int aquaColor = 0xFF55FFFF;
-
-        // 1. GÓC TRÊN TRÁI: FPS, PING & SERVER IP
+        // 1. WATERMARK (Góc trên bên trái)
         if (WATERMARK.isEnabled()) {
-            int ping = 0;
-            if (client.getConnection() != null) {
-                PlayerInfo entry = client.getConnection().getPlayerInfo(client.player.getUUID());
-                if (entry != null) ping = entry.getLatency();
-            }
-            String serverIp = client.getCurrentServer() != null ? client.getCurrentServer().ip.toUpperCase() : "SINGLEPLAYER";
-            String statsText = String.format("FPS: %d  PING: %dMS  %s", client.getFps(), ping, serverIp);
-
-            int boxW = font.width(statsText) + 8;
-            graphics.fill(4, 4, 4 + boxW, 16, bgDark);
-            graphics.drawString(font, statsText, 8, 6, goldColor);
+            String wmText = "SimpleHUD 1.21.11";
+            int wmWidth = font.width(wmText);
+            drawStyledBox(graphics, 4, 4, 4 + wmWidth + 8, 17, PRIMARY_COLOR.getRGB());
+            graphics.drawString(font, wmText, 8, 7, PRIMARY_COLOR.getRGB());
         }
 
-        // 2. BÊN TRÁI: ĐỘ BỀN GIÁP (%) + SỐ LƯỢNG VẬT PHẨM (TOTEM, TÁO VÀNG, EXP)
-        if (ARMOR_HUD.isEnabled()) {
-            int armorY = 48;
-            EquipmentSlot[] slots = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
-            for (EquipmentSlot slot : slots) {
-                ItemStack stack = client.player.getItemBySlot(slot);
-                if (!stack.isEmpty()) {
-                    graphics.renderItem(stack, 6, armorY);
-                    int maxDmg = stack.getMaxDamage();
-                    int pct = maxDmg > 0 ? (int) (((double) (maxDmg - stack.getDamageValue()) / maxDmg) * 100) : 100;
-                    graphics.drawString(font, pct + "%", 25, armorY + 4, whiteColor);
-                    armorY += 18;
-                }
-            }
+        // 2. SYSTEM INFO: FPS | PING | SERVER IP (Ngay dưới Watermark)
+        if (INFO_HUD.isEnabled()) {
+            String fpsPart = "FPS: " + client.getFps() + " | ";
+            String pingPart = getPingInfo(client);
+            String ipPart = client.getCurrentServer() == null ? "Single Player" : client.getCurrentServer().ip;
 
-            // Hiển thị thêm số lượng Totem và Táo vàng bên cạnh cột giáp
-            int totems = countItem(client, Items.TOTEM_OF_UNDYING);
-            int gapples = countItem(client, Items.GOLDEN_APPLE) + countItem(client, Items.ENCHANTED_GOLDEN_APPLE);
-            
-            graphics.renderItem(new ItemStack(Items.TOTEM_OF_UNDYING), 62, 48);
-            graphics.drawString(font, String.valueOf(totems), 80, 52, whiteColor);
+            int w1 = font.width(fpsPart);
+            int w2 = font.width(pingPart);
+            int w3 = font.width(ipPart);
+            int totalW = w1 + w2 + w3;
 
-            graphics.renderItem(new ItemStack(Items.GOLDEN_APPLE), 62, 66);
-            graphics.drawString(font, String.valueOf(gapples), 80, 70, whiteColor);
+            drawStyledBox(graphics, 4, 21, 4 + totalW + 8, 34, SECONDARY_COLOR.getRGB());
+            graphics.drawString(font, fpsPart, 8, 24, PRIMARY_COLOR.getRGB());
+            graphics.drawString(font, pingPart, 8 + w1, 24, SECONDARY_COLOR.getRGB());
+            graphics.drawString(font, ipPart, 8 + w1 + w2, 24, new Color(175, 175, 175, 255).getRGB());
         }
 
-        // 3. GÓC DƯỚI TRÁI: TỌA ĐỘ XYZ HIỆN TẠI + QUY ĐỔI NETHER/OVERWORLD
+        // 3. TIME (Chính giữa mép trên màn hình)
+        if (TIME_HUD.isEnabled()) {
+            String timeStr = TIME_FORMATTER.format(new Date());
+            int timeW = font.width(timeStr);
+            int centerX = screenWidth / 2;
+
+            drawStyledBox(graphics, centerX - (timeW / 2) - 4, 4, centerX + (timeW / 2) + 4, 17, PRIMARY_COLOR.getRGB());
+            graphics.drawString(font, timeStr, centerX - (timeW / 2), 7, PRIMARY_COLOR.getRGB());
+        }
+
+        // 4. COORDINATES (Góc dưới bên trái + quy đổi Nether/Overworld)
         if (COORDINATES.isEnabled()) {
             double x = client.player.getX();
             double y = client.player.getY();
             double z = client.player.getZ();
-            boolean isNether = client.level != null && client.level.dimension() == Level.NETHER;
-            double altX = isNether ? x * 8.0 : x / 8.0;
-            double altZ = isNether ? z * 8.0 : z / 8.0;
+            String altCoords = "";
 
-            String coordStr = String.format("X: %.1f  Y: %.1f  Z: %.1f  [%.1f, %.1f]", x, y, z, altX, altZ);
-            int cWidth = font.width(coordStr) + 8;
+            if (client.level != null) {
+                if (client.level.dimension() == Level.NETHER) {
+                    altCoords = String.format(" [%.1f, %.1f]", x * 8.0, z * 8.0);
+                } else if (client.level.dimension() == Level.OVERWORLD) {
+                    altCoords = String.format(" [%.1f, %.1f]", x / 8.0, z / 8.0);
+                }
+            }
 
-            graphics.fill(4, screenHeight - 16, 4 + cWidth, screenHeight - 4, bgDark);
-            graphics.drawString(font, coordStr, 8, screenHeight - 14, aquaColor);
+            String coordText = String.format("X: %.1f | Y: %.1f | Z: %.1f%s", x, y, z, altCoords);
+            int coordW = font.width(coordText);
+
+            drawStyledBox(graphics, 4, screenHeight - 17, 4 + coordW + 8, screenHeight - 4, PRIMARY_COLOR.getRGB());
+            graphics.drawString(font, coordText, 8, screenHeight - 14, PRIMARY_COLOR.getRGB());
         }
 
-        // 4. GÓC TRÊN PHẢI: MODULE LIST (CHỮ VÀNG SÁNG GIỐNG ẢNH)
+        // 5. MODULE LIST (Góc trên bên phải - Gradient Xanh Dương -> Hồng Tím)
         if (ARRAY_LIST.isEnabled()) {
             List<SimpleModule> enabledModules = new ArrayList<>();
             for (SimpleModule mod : MODULES) {
@@ -151,55 +147,45 @@ public class SimpleHUDClient implements ClientModInitializer {
             enabledModules.sort(Comparator.comparingInt((SimpleModule m) -> font.width(m.getName())).reversed());
 
             int rightY = 4;
-            for (SimpleModule mod : enabledModules) {
-                String name = mod.getName().toUpperCase();
-                int tWidth = font.width(name);
-                int xPos = screenWidth - tWidth - 6;
+            int total = enabledModules.size();
+            for (int i = 0; i < total; i++) {
+                SimpleModule mod = enabledModules.get(i);
+                String name = mod.getName();
+                int nameW = font.width(name);
+                int boxRight = screenWidth - 4;
+                int boxLeft = boxRight - nameW - 8;
 
-                graphics.fill(xPos - 3, rightY - 1, screenWidth - 2, rightY + 10, bgDark);
-                graphics.fill(screenWidth - 2, rightY - 1, screenWidth, rightY + 10, goldColor);
-                graphics.drawString(font, name, xPos, rightY, lightGold);
-                rightY += 11;
-            }
-        }
+                float ratio = total > 1 ? (float) i / (float) (total - 1) : 0.0f;
+                int color = blendColors(PRIMARY_COLOR, SECONDARY_COLOR, ratio).getRGB();
 
-        // 5. GÓC PHẢI DƯỚI: LƯỚI XEM TRƯỚC TÚI ĐỒ (INVENTORY PREVIEW)
-        if (INV_PREVIEW.isEnabled()) {
-            int invX = screenWidth - 166;
-            int invY = screenHeight - 70;
-            graphics.fill(invX - 2, invY - 2, invX + 162, invY + 54, bgDark);
+                graphics.fill(boxLeft, rightY, boxRight, rightY + 13, BG_COLOR);
+                graphics.fill(boxRight - 2, rightY, boxRight, rightY + 13, color);
+                graphics.drawString(font, name, boxLeft + 4, rightY + 3, color);
 
-            for (int row = 0; row < 3; row++) {
-                for (int col = 0; col < 9; col++) {
-                    int slotIndex = 9 + row * 9 + col;
-                    ItemStack stack = client.player.getInventory().getItem(slotIndex);
-                    
-                    if (!stack.isEmpty()) {
-                        int itemX = invX + col * 18;
-                        int itemY = invY + row * 18;
-                        graphics.renderItem(stack, itemX, itemY);
-                        graphics.renderItemDecorations(font, stack, itemX, itemY);
-                    }
-                }
+                rightY += 15;
             }
         }
     }
 
-    private int countItem(Minecraft client, Item targetItem) {
-        if (client.player == null) return 0;
-        int count = 0;
-        for (int i = 0; i < client.player.getInventory().getContainerSize(); i++) {
-            ItemStack stack = client.player.getInventory().getItem(i);
-            if (stack.is(targetItem)) {
-                count += stack.getCount();
-            }
-        }
-        return count;
+    private void drawStyledBox(GuiGraphics graphics, int x1, int y1, int x2, int y2, int accentColor) {
+        graphics.fill(x1, y1, x2, y2, BG_COLOR);
+        graphics.fill(x1, y1, x1 + 2, y2, accentColor);
     }
 
-    private int getRainbowColor(int delay) {
-        double rainbowState = Math.ceil((System.currentTimeMillis() + delay) / 15.0);
-        rainbowState %= 360;
-        return Color.getHSBColor((float) (rainbowState / 360.0f), 0.7f, 1.0f).getRGB();
-                        }
+    private String getPingInfo(Minecraft client) {
+        if (client.player != null && client.getConnection() != null) {
+            PlayerInfo entry = client.getConnection().getPlayerInfo(client.player.getUUID());
+            if (entry != null) {
+                return "Ping: " + entry.getLatency() + "ms | ";
+            }
+        }
+        return "Ping: N/A | ";
+    }
+
+    private Color blendColors(Color c1, Color c2, float ratio) {
+        int r = Mth.clamp((int) (c1.getRed() + (c2.getRed() - c1.getRed()) * ratio), 0, 255);
+        int g = Mth.clamp((int) (c1.getGreen() + (c2.getGreen() - c1.getGreen()) * ratio), 0, 255);
+        int b = Mth.clamp((int) (c1.getBlue() + (c2.getBlue() - c1.getBlue()) * ratio), 0, 255);
+        return new Color(r, g, b, 255);
+    }
 }
