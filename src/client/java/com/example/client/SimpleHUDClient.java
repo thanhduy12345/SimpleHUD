@@ -158,6 +158,7 @@ public class SimpleHUDClient implements ClientModInitializer {
         }
 
         // 5. MODULE LIST (Thẻ bo góc nhẹ có viền mỏng đồng bộ màu chữ giống hệt ảnh mẫu)
+        // 5. MODULE LIST (Hộp chữ bo góc tách rời + Vạch dọc sáng màu nối liền mạch ở mép phải)
         if (ARRAY_LIST.isEnabled()) {
             List<SimpleModule> enabledModules = new ArrayList<>();
             for (SimpleModule mod : MODULES) {
@@ -169,6 +170,7 @@ public class SimpleHUDClient implements ClientModInitializer {
 
             int rightY = 5;
             int boxHeight = 13;
+            int gap = 2;
             int total = enabledModules.size();
 
             for (int i = 0; i < total; i++) {
@@ -176,26 +178,23 @@ public class SimpleHUDClient implements ClientModInitializer {
                 Component nameComp = styledText(mod.getName().toUpperCase());
                 int nameW = font.width(nameComp);
 
-                int boxRight = screenWidth - 5;
+                int barRight = screenWidth - 5;
+                int barLeft = barRight - 2;
+                int boxRight = barLeft - 3;
                 int boxLeft = boxRight - nameW - 8;
 
                 float ratio = total > 1 ? (float) i / (float) (total - 1) : 0.0f;
-                Color baseColor = blendColors(PRIMARY_COLOR, SECONDARY_COLOR, ratio);
-                int textColor = baseColor.getRGB();
-                // Tạo màu viền hơi trầm/trong suốt nhẹ (Alpha 170) giống ảnh mẫu
-                int borderColor = new Color(baseColor.getRed(), baseColor.getGreen(), baseColor.getBlue(), 170).getRGB();
+                int color = blendColors(PRIMARY_COLOR, SECONDARY_COLOR, ratio).getRGB();
 
-                // 1. Vẽ lớp viền bo góc lớn hơn 1px ở bên ngoài
-                drawFullRoundedRect(graphics, boxLeft - 1, rightY - 1, boxRight + 1, rightY + boxHeight + 1, cornerRadius + 1, borderColor);
-                // 2. Vẽ lớp nền tối đè lên bên trong để tạo thành đường viền mảnh 1px
                 drawFullRoundedRect(graphics, boxLeft, rightY, boxRight, rightY + boxHeight, cornerRadius, BG_COLOR);
-                // 3. Vẽ chữ tên Module
-                graphics.drawString(font, nameComp, boxLeft + 4, rightY + 3, textColor);
+                graphics.drawString(font, nameComp, boxLeft + 4, rightY + 3, color);
 
-                rightY += boxHeight + 3; // Tăng nhẹ khoảng cách lên 3px để 2 đường viền không chạm nhau
+                int lineEndY = (i == total - 1) ? (rightY + boxHeight) : (rightY + boxHeight + gap);
+                graphics.fill(barLeft, rightY, barRight, lineEndY, color);
+
+                rightY += boxHeight + gap;
             }
         }
-
 
         graphics.pose().popMatrix();
     }
