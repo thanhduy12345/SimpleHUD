@@ -10,7 +10,10 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.PlayerInfo;
+import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import org.lwjgl.glfw.GLFW;
@@ -32,10 +35,14 @@ public class SimpleHUDClient implements ClientModInitializer {
     public static final SimpleModule TOGGLE_SPRINT = new SimpleModule("Sprint", true);
     public static final SimpleModule ARRAY_LIST = new SimpleModule("Modules", true);
 
+    // Kích thước mặc định (1.25x) và độ bo tròn toàn bộ góc (7px = bo tròn dạng viên thuốc)
+    public static float hudScale = 1.25f;
+    public static int cornerRadius = 7;
+
     private static final SimpleDateFormat TIME_FORMATTER = new SimpleDateFormat("HH:mm:ss");
     private static final Color PRIMARY_COLOR = new Color(65, 185, 255, 255);
     private static final Color SECONDARY_COLOR = new Color(255, 110, 230, 255);
-    private static final int BG_COLOR = new Color(35, 35, 35, 204).getRGB();
+    private static final int BG_COLOR = new Color(28, 28, 32, 215).getRGB();
 
     private static KeyMapping openGuiKey;
 
@@ -76,45 +83,48 @@ public class SimpleHUDClient implements ClientModInitializer {
         }
 
         Font font = client.font;
-        int screenWidth = graphics.guiWidth();
-        int screenHeight = graphics.guiHeight();
+        int screenWidth = (int) (graphics.guiWidth() / hudScale);
+        int screenHeight = (int) (graphics.guiHeight() / hudScale);
 
-        // 1. WATERMARK (Góc trên bên trái)
+        graphics.pose().pushMatrix();
+        graphics.pose().scale(hudScale, hudScale);
+
+        // 1. WATERMARK (Bo tròn toàn bộ)
         if (WATERMARK.isEnabled()) {
-            String wmText = "SimpleHUD 1.21.11";
+            String wmText = "KRYPTON+";
             int wmWidth = font.width(wmText);
-            drawStyledBox(graphics, 4, 4, 4 + wmWidth + 8, 17, PRIMARY_COLOR.getRGB());
-            graphics.drawString(font, wmText, 8, 7, PRIMARY_COLOR.getRGB());
+            drawFullRoundedRect(graphics, 5, 5, 5 + wmWidth + 14, 20, cornerRadius, BG_COLOR);
+            graphics.drawString(font, wmText, 12, 9, PRIMARY_COLOR.getRGB());
         }
 
-        // 2. SYSTEM INFO: FPS | PING | SERVER IP (Ngay dưới Watermark)
+        // 2. SYSTEM INFO: FPS | PING | SERVER IP (Bo tròn toàn bộ)
         if (INFO_HUD.isEnabled()) {
-            String fpsPart = "FPS: " + client.getFps() + " | ";
+            String fpsPart = "FPS: " + client.getFps() + "  ";
             String pingPart = getPingInfo(client);
-            String ipPart = client.getCurrentServer() == null ? "Single Player" : client.getCurrentServer().ip;
+            String ipPart = client.getCurrentServer() == null ? "SINGLEPLAYER" : client.getCurrentServer().ip.toUpperCase();
 
             int w1 = font.width(fpsPart);
             int w2 = font.width(pingPart);
             int w3 = font.width(ipPart);
             int totalW = w1 + w2 + w3;
 
-            drawStyledBox(graphics, 4, 21, 4 + totalW + 8, 34, SECONDARY_COLOR.getRGB());
-            graphics.drawString(font, fpsPart, 8, 24, PRIMARY_COLOR.getRGB());
-            graphics.drawString(font, pingPart, 8 + w1, 24, SECONDARY_COLOR.getRGB());
-            graphics.drawString(font, ipPart, 8 + w1 + w2, 24, new Color(175, 175, 175, 255).getRGB());
+            drawFullRoundedRect(graphics, 5, 24, 5 + totalW + 14, 39, cornerRadius, BG_COLOR);
+            graphics.drawString(font, fpsPart, 12, 28, PRIMARY_COLOR.getRGB());
+            graphics.drawString(font, pingPart, 12 + w1, 28, SECONDARY_COLOR.getRGB());
+            graphics.drawString(font, ipPart, 12 + w1 + w2, 28, new Color(210, 210, 210, 255).getRGB());
         }
 
-        // 3. TIME (Chính giữa mép trên màn hình)
+        // 3. TIME (Chính giữa mép trên - Bo tròn toàn bộ)
         if (TIME_HUD.isEnabled()) {
             String timeStr = TIME_FORMATTER.format(new Date());
             int timeW = font.width(timeStr);
             int centerX = screenWidth / 2;
 
-            drawStyledBox(graphics, centerX - (timeW / 2) - 4, 4, centerX + (timeW / 2) + 4, 17, PRIMARY_COLOR.getRGB());
-            graphics.drawString(font, timeStr, centerX - (timeW / 2), 7, PRIMARY_COLOR.getRGB());
+            drawFullRoundedRect(graphics, centerX - (timeW / 2) - 7, 5, centerX + (timeW / 2) + 7, 20, cornerRadius, BG_COLOR);
+            graphics.drawString(font, timeStr, centerX - (timeW / 2), 9, PRIMARY_COLOR.getRGB());
         }
 
-        // 4. COORDINATES (Góc dưới bên trái + quy đổi Nether/Overworld)
+        // 4. COORDINATES (Góc dưới bên trái - Bo tròn toàn bộ)
         if (COORDINATES.isEnabled()) {
             double x = client.player.getX();
             double y = client.player.getY();
@@ -132,11 +142,11 @@ public class SimpleHUDClient implements ClientModInitializer {
             String coordText = String.format("X: %.1f | Y: %.1f | Z: %.1f%s", x, y, z, altCoords);
             int coordW = font.width(coordText);
 
-            drawStyledBox(graphics, 4, screenHeight - 17, 4 + coordW + 8, screenHeight - 4, PRIMARY_COLOR.getRGB());
-            graphics.drawString(font, coordText, 8, screenHeight - 14, PRIMARY_COLOR.getRGB());
+            drawFullRoundedRect(graphics, 5, screenHeight - 20, 5 + coordW + 14, screenHeight - 5, cornerRadius, BG_COLOR);
+            graphics.drawString(font, coordText, 12, screenHeight - 16, PRIMARY_COLOR.getRGB());
         }
 
-        // 5. MODULE LIST (Góc trên bên phải - Gradient Xanh Dương -> Hồng Tím)
+        // 5. MODULE LIST (Góc trên bên phải - Từng ô bo tròn mềm mại)
         if (ARRAY_LIST.isEnabled()) {
             List<SimpleModule> enabledModules = new ArrayList<>();
             for (SimpleModule mod : MODULES) {
@@ -146,40 +156,65 @@ public class SimpleHUDClient implements ClientModInitializer {
             }
             enabledModules.sort(Comparator.comparingInt((SimpleModule m) -> font.width(m.getName())).reversed());
 
-            int rightY = 4;
+            int rightY = 5;
             int total = enabledModules.size();
             for (int i = 0; i < total; i++) {
                 SimpleModule mod = enabledModules.get(i);
                 String name = mod.getName();
                 int nameW = font.width(name);
-                int boxRight = screenWidth - 4;
-                int boxLeft = boxRight - nameW - 8;
+                int boxRight = screenWidth - 5;
+                int boxLeft = boxRight - nameW - 14;
 
                 float ratio = total > 1 ? (float) i / (float) (total - 1) : 0.0f;
                 int color = blendColors(PRIMARY_COLOR, SECONDARY_COLOR, ratio).getRGB();
 
-                graphics.fill(boxLeft, rightY, boxRight, rightY + 13, BG_COLOR);
-                graphics.fill(boxRight - 2, rightY, boxRight, rightY + 13, color);
-                graphics.drawString(font, name, boxLeft + 4, rightY + 3, color);
+                drawFullRoundedRect(graphics, boxLeft, rightY, boxRight, rightY + 15, cornerRadius, BG_COLOR);
+                graphics.drawString(font, name, boxLeft + 7, rightY + 4, color);
 
-                rightY += 15;
+                rightY += 17;
             }
         }
+
+        graphics.pose().popMatrix();
     }
 
-    private void drawStyledBox(GuiGraphics graphics, int x1, int y1, int x2, int y2, int accentColor) {
-        graphics.fill(x1, y1, x2, y2, BG_COLOR);
-        graphics.fill(x1, y1, x1 + 2, y2, accentColor);
+    // Thuật toán vẽ hình chữ nhật bo tròn 4 góc siêu mịn
+    private void drawFullRoundedRect(GuiGraphics graphics, int x1, int y1, int x2, int y2, int radius, int color) {
+        int width = x2 - x1;
+        int height = y2 - y1;
+        int r = Math.min(radius, Math.min(width / 2, height / 2));
+
+        if (r <= 0) {
+            graphics.fill(x1, y1, x2, y2, color);
+            return;
+        }
+
+        // Phần lõi giữa (không bị đè pixel)
+        graphics.fill(x1 + r, y1, x2 - r, y2, color);
+        graphics.fill(x1, y1 + r, x1 + r, y2 - r, color);
+        graphics.fill(x2 - r, y1 + r, x2, y2 - r, color);
+
+        // Vẽ từng dòng pixel tạo đường cong tròn đều ở 4 góc
+        for (int i = 0; i < r; i++) {
+            double dy = r - i - 0.5;
+            int dx = (int) Math.round(r - Math.sqrt(Math.max(0, r * r - dy * dy)));
+            // 2 góc trên
+            graphics.fill(x1 + dx, y1 + i, x1 + r, y1 + i + 1, color);
+            graphics.fill(x2 - r, y1 + i, x2 - dx, y1 + i + 1, color);
+            // 2 góc dưới
+            graphics.fill(x1 + dx, y2 - i - 1, x1 + r, y2 - i, color);
+            graphics.fill(x2 - r, y2 - i - 1, x2 - dx, y2 - i, color);
+        }
     }
 
     private String getPingInfo(Minecraft client) {
         if (client.player != null && client.getConnection() != null) {
             PlayerInfo entry = client.getConnection().getPlayerInfo(client.player.getUUID());
             if (entry != null) {
-                return "Ping: " + entry.getLatency() + "ms | ";
+                return "PING: " + entry.getLatency() + "MS  ";
             }
         }
-        return "Ping: N/A | ";
+        return "PING: 0MS  ";
     }
 
     private Color blendColors(Color c1, Color c2, float ratio) {
@@ -188,4 +223,15 @@ public class SimpleHUDClient implements ClientModInitializer {
         int b = Mth.clamp((int) (c1.getBlue() + (c2.getBlue() - c1.getBlue()) * ratio), 0, 255);
         return new Color(r, g, b, 255);
     }
-}
+
+    // Lớp quản lý Module
+    public static class SimpleModule {
+        private final String name;
+        private boolean enabled;
+
+        public SimpleModule(String name, boolean enabled) {
+            this.name = name;
+            this.enabled = enabled;
+        }
+
+                                 
