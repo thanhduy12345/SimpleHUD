@@ -32,7 +32,7 @@ public class SimpleHUDClient implements ClientModInitializer {
     public static final List<SimpleModule> HUD_ELEMENTS = new ArrayList<>();
 
     public static final SimpleModule MASTER_HUD = new SimpleModule("HUD", true);
-    public static final SimpleModule TOGGLE_SPRINT = new SimpleModule("Sprint", true);
+    public static final SimpleModule STORAGE_ESP = new SimpleModule("Storage ESP", true);
 
     public static final SimpleModule WATERMARK = new SimpleModule("Watermark", true);
     public static final SimpleModule INFO_HUD = new SimpleModule("Info", true);
@@ -58,7 +58,7 @@ public class SimpleHUDClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         MODULES.add(MASTER_HUD);
-        MODULES.add(TOGGLE_SPRINT);
+        MODULES.add(STORAGE_ESP);
 
         HUD_ELEMENTS.add(WATERMARK);
         HUD_ELEMENTS.add(INFO_HUD);
