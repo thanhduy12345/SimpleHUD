@@ -156,7 +156,7 @@ public class SimpleHUDClient implements ClientModInitializer {
             graphics.drawString(font, coordComp, 12, screenHeight - 16, PRIMARY_COLOR.getRGB());
         }
 
-        // 5. MODULE LIST (Chữ IN HOA + Đường viền dọc mép phải giống ảnh)
+        // 5. MODULE LIST (Thẻ bo góc nhẹ tách rời khe nhỏ 2px, căn sát mép phải giống hệt ảnh mẫu)
         if (ARRAY_LIST.isEnabled()) {
             List<SimpleModule> enabledModules = new ArrayList<>();
             for (SimpleModule mod : MODULES) {
@@ -167,27 +167,28 @@ public class SimpleHUDClient implements ClientModInitializer {
             enabledModules.sort(Comparator.comparingInt((SimpleModule m) -> font.width(styledText(m.getName().toUpperCase()))).reversed());
 
             int rightY = 5;
+            int boxHeight = 13;
+            int smallRadius = 2;
             int total = enabledModules.size();
+
             for (int i = 0; i < total; i++) {
                 SimpleModule mod = enabledModules.get(i);
                 Component nameComp = styledText(mod.getName().toUpperCase());
                 int nameW = font.width(nameComp);
 
-                int lineRight = screenWidth - 5;
-                int lineLeft = lineRight - 2;
-                int boxRight = lineLeft - 3;
-                int boxLeft = boxRight - nameW - 12;
+                int boxRight = screenWidth - 5;
+                int boxLeft = boxRight - nameW - 8;
 
                 float ratio = total > 1 ? (float) i / (float) (total - 1) : 0.0f;
                 int color = blendColors(PRIMARY_COLOR, SECONDARY_COLOR, ratio).getRGB();
 
-                drawFullRoundedRect(graphics, boxLeft, rightY, boxRight, rightY + 15, cornerRadius, BG_COLOR);
-                graphics.drawString(font, nameComp, boxLeft + 6, rightY + 4, color);
-                graphics.fill(lineLeft, rightY + 1, lineRight, rightY + 14, color);
+                drawFullRoundedRect(graphics, boxLeft, rightY, boxRight, rightY + boxHeight, smallRadius, BG_COLOR);
+                graphics.drawString(font, nameComp, boxLeft + 4, rightY + 3, color);
 
-                rightY += 17;
+                rightY += boxHeight + 2;
             }
         }
+
 
         graphics.pose().popMatrix();
     }
