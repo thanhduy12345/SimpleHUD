@@ -34,6 +34,11 @@ public class SimpleHUDClient implements ClientModInitializer {
     public static final SimpleModule MASTER_HUD = new SimpleModule("HUD", true);
     public static final SimpleModule TOGGLE_SPRINT = new SimpleModule("Sprint", true);
     public static final SimpleModule STORAGE_ESP = new SimpleModule("Storage ESP", true);
+    public static final SimpleModule PLAYER_ESP = new SimpleModule("Player ESP", true);
+    public static final SimpleModule OG_CHUNK_FINDER = new SimpleModule("OG Chunk Finder", true);
+    public static final SimpleModule OG_DEBUG = new SimpleModule("OG Debug", true);
+    public static final SimpleModule SKELLY_DEBUG = new SimpleModule("Skelly Debug", true);
+    
 
     // Các tùy chọn con nằm bên trong menu chuột phải của HUD
     public static final SimpleModule WATERMARK = new SimpleModule("Watermark", true);
@@ -60,6 +65,11 @@ public class SimpleHUDClient implements ClientModInitializer {
         MODULES.add(MASTER_HUD);
         MODULES.add(TOGGLE_SPRINT);
         MODULES.add(STORAGE_ESP);
+        MODULES.add(PLAYER_ESP);
+        MODULES.add(OG_CHUNK_FINDER);
+        MODULES.add(OG_DEBUG);
+        MODULES.add(SKELLY_DEBUG);
+        
 
         HUD_ELEMENTS.add(WATERMARK);
         HUD_ELEMENTS.add(INFO_HUD);
