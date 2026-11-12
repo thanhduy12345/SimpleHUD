@@ -192,7 +192,11 @@ public class ClickGuiScreen extends Screen {
         }
         return super.mouseReleased(event);
     }
-
+    @Override
+    public void removed() {
+        SimpleHUDClient.saveConfig();
+        super.removed();
+    }
     @Override
     public boolean isPauseScreen() {
         return false;
