@@ -33,7 +33,8 @@ public class SimpleHUDClient implements ClientModInitializer {
 
     public static final SimpleModule MASTER_HUD = new SimpleModule("HUD", true);
     public static final SimpleModule STORAGE_ESP = new SimpleModule("Storage ESP", true);
-
+    public static final SimpleModule TOGGLE_SPRINT = new SimpleModule("Sprint", true);
+    
     public static final SimpleModule WATERMARK = new SimpleModule("Watermark", true);
     public static final SimpleModule INFO_HUD = new SimpleModule("Info", true);
     public static final SimpleModule TIME_HUD = new SimpleModule("Time", true);
