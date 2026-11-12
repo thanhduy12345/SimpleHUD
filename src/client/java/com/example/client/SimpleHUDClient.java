@@ -289,9 +289,10 @@ public class SimpleHUDClient implements ClientModInitializer {
             }
         }
 
-        graphics.pose().popMatrix();
+                graphics.pose().popMatrix();
     }
-        }
+}
+
         private void drawFullRoundedRect(GuiGraphics graphics, int x1, int y1, int x2, int y2, int radius, int color) {
         int width = x2 - x1;
         int height = y2 - y1;
