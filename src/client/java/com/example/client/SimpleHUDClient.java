@@ -51,7 +51,7 @@ public class SimpleHUDClient implements ClientModInitializer {
     public static final SimpleModule ARRAY_LIST = new SimpleModule("Modules", true);
     public static final SimpleModule RAINBOW_HUD = new SimpleModule("Rainbow", false);
 
-    public static float hudScale = 0.8f;
+    public static float hudScale = 0.9f;
     public static int cornerRadius = 2;
 
     public static final FontDescription CUSTOM_FONT = new FontDescription.Resource(Identifier.fromNamespaceAndPath("simplehud", "custom"));
@@ -133,7 +133,7 @@ public class SimpleHUDClient implements ClientModInitializer {
             Properties props = new Properties();
             props.load(in);
 
-            hudScale = Float.parseFloat(props.getProperty("hudScale", "0.8"));
+            hudScale = Float.parseFloat(props.getProperty("hudScale", "0.9"));
             cornerRadius = Integer.parseInt(props.getProperty("cornerRadius", "2"));
 
             for (SimpleModule mod : MODULES) {
@@ -322,5 +322,4 @@ public class SimpleHUDClient implements ClientModInitializer {
         int b = Mth.clamp((int) (c1.getBlue() + (c2.getBlue() - c1.getBlue()) * ratio), 0, 255);
         return new Color(r, g, b, 255);
     }
-                                                                         }
-            
+}
