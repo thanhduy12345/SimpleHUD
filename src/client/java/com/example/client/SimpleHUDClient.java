@@ -157,7 +157,7 @@ public class SimpleHUDClient implements ClientModInitializer {
             graphics.drawString(font, coordComp, 12, screenHeight - 16, PRIMARY_COLOR.getRGB());
         }
 
-        // 5. MODULE LIST (Thẻ bo góc nhẹ tách rời khe nhỏ 2px, căn sát mép phải giống hệt ảnh mẫu)
+        // 5. MODULE LIST (Thẻ bo góc nhẹ có viền mỏng đồng bộ màu chữ giống hệt ảnh mẫu)
         if (ARRAY_LIST.isEnabled()) {
             List<SimpleModule> enabledModules = new ArrayList<>();
             for (SimpleModule mod : MODULES) {
@@ -180,13 +180,19 @@ public class SimpleHUDClient implements ClientModInitializer {
                 int boxLeft = boxRight - nameW - 8;
 
                 float ratio = total > 1 ? (float) i / (float) (total - 1) : 0.0f;
-                int color = blendColors(PRIMARY_COLOR, SECONDARY_COLOR, ratio).getRGB();
+                Color baseColor = blendColors(PRIMARY_COLOR, SECONDARY_COLOR, ratio);
+                int textColor = baseColor.getRGB();
+                // Tạo màu viền hơi trầm/trong suốt nhẹ (Alpha 170) giống ảnh mẫu
+                int borderColor = new Color(baseColor.getRed(), baseColor.getGreen(), baseColor.getBlue(), 170).getRGB();
 
+                // 1. Vẽ lớp viền bo góc lớn hơn 1px ở bên ngoài
+                drawFullRoundedRect(graphics, boxLeft - 1, rightY - 1, boxRight + 1, rightY + boxHeight + 1, cornerRadius + 1, borderColor);
+                // 2. Vẽ lớp nền tối đè lên bên trong để tạo thành đường viền mảnh 1px
                 drawFullRoundedRect(graphics, boxLeft, rightY, boxRight, rightY + boxHeight, cornerRadius, BG_COLOR);
-                
-                graphics.drawString(font, nameComp, boxLeft + 4, rightY + 3, color);
+                // 3. Vẽ chữ tên Module
+                graphics.drawString(font, nameComp, boxLeft + 4, rightY + 3, textColor);
 
-                rightY += boxHeight + 2;
+                rightY += boxHeight + 3; // Tăng nhẹ khoảng cách lên 3px để 2 đường viền không chạm nhau
             }
         }
 
