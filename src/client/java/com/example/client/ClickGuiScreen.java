@@ -6,6 +6,8 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 
 import java.awt.Color;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ClickGuiScreen extends Screen {
 
@@ -18,10 +20,18 @@ public class ClickGuiScreen extends Screen {
     private boolean isDragging = false;
     private int dragOffsetX = 0;
     private int dragOffsetY = 0;
-    private boolean panelCollapsed = false;
-    private boolean hudExpanded = false;
 
-    // Bảng màu chuẩn theo mẫu giao diện BASEFINDING
+    // Biến điều khiển trạng thái và tiến độ hiệu ứng trượt (0.0f -> 1.0f)
+    private boolean panelCollapsed = false;
+    private float panelOpenProgress = 1.0f;
+
+    private boolean hudExpanded = false;
+    private float hudExpandProgress = 0.0f;
+
+    private long lastFrameTime = System.nanoTime();
+    private final Map<SimpleModule, Float> switchAnimations = new HashMap<>();
+
+    // Bảng màu chuẩn theo giao diện BASEFINDING
     private static final int HEADER_BG = new Color(36, 40, 52, 248).getRGB();
     private static final int PANEL_BG = new Color(46, 51, 66, 242).getRGB();
     private static final int ROW_HOVER_BG = new Color(54, 60, 77, 245).getRGB();
@@ -44,9 +54,23 @@ public class ClickGuiScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+        // Tính toán thời gian trôi qua giữa 2 khung hình để trượt mượt trên mọi mức FPS
+        long now = System.nanoTime();
+        float dt = Math.min((now - lastFrameTime) / 1_000_000_000.0f, 0.05f);
+        lastFrameTime = now;
+        float speed = 11.0f;
+
+        float targetPanel = panelCollapsed ? 0.0f : 1.0f;
+        panelOpenProgress += (targetPanel - panelOpenProgress) * Math.min(1.0f, dt * speed);
+        if (Math.abs(targetPanel - panelOpenProgress) < 0.005f) panelOpenProgress = targetPanel;
+
+        float targetHud = hudExpanded ? 1.0f : 0.0f;
+        hudExpandProgress += (targetHud - hudExpandProgress) * Math.min(1.0f, dt * speed);
+        if (Math.abs(targetHud - hudExpandProgress) < 0.005f) hudExpandProgress = targetHud;
+
         int currentY = panelY;
 
-        // 1. Vẽ thanh tiêu đề (Header) kèm biểu tượng Radar xanh lá và nút thu gọn (-)
+        // 1. Vẽ thanh tiêu đề (Header)
         graphics.fill(panelX, currentY, panelX + panelWidth, currentY + headerHeight, HEADER_BG);
         graphics.fill(panelX, currentY + headerHeight - 1, panelX + panelWidth, currentY + headerHeight, BORDER_COLOR);
 
@@ -58,64 +82,80 @@ public class ClickGuiScreen extends Screen {
 
         currentY += headerHeight;
 
-        // 2. Vẽ danh sách các Module nếu bảng đang mở
-        if (!panelCollapsed) {
+        // 2. Tính tổng chiều cao thực tế của danh sách bên dưới và cắt khung mượt mà
+        int fullSubHeight = (SimpleHUDClient.HUD_ELEMENTS.size() + 2) * rowHeight;
+        int currentSubHeight = Math.round(fullSubHeight * easeOutCubic(hudExpandProgress));
+        int fullBodyHeight = (SimpleHUDClient.MODULES.size() * rowHeight) + currentSubHeight;
+        int visibleBodyHeight = Math.round(fullBodyHeight * easeOutCubic(panelOpenProgress));
+
+        if (visibleBodyHeight > 0) {
+            graphics.enableScissor(panelX, currentY, panelX + panelWidth, currentY + visibleBodyHeight);
+
+            int drawY = currentY;
             for (SimpleModule mod : SimpleHUDClient.MODULES) {
                 boolean enabled = mod.isEnabled();
-                boolean hovered = isHovered(mouseX, mouseY, panelX, currentY, panelWidth, rowHeight);
+                boolean hovered = isHovered(mouseX, mouseY, panelX, drawY, panelWidth, rowHeight) && visibleBodyHeight >= fullBodyHeight - 2;
 
-                graphics.fill(panelX, currentY, panelX + panelWidth, currentY + rowHeight, hovered ? ROW_HOVER_BG : PANEL_BG);
+                graphics.fill(panelX, drawY, panelX + panelWidth, drawY + rowHeight, hovered ? ROW_HOVER_BG : PANEL_BG);
 
-                // Thanh dọc màu xanh lá neon sát mép trái khi BẬT
                 if (enabled) {
-                    graphics.fill(panelX, currentY + 1, panelX + 3, currentY + rowHeight - 1, NEON_GREEN);
+                    graphics.fill(panelX, drawY + 1, panelX + 3, drawY + rowHeight - 1, NEON_GREEN);
                 }
 
                 String label = mod.getName().toUpperCase();
                 if (mod == SimpleHUDClient.MASTER_HUD) {
                     label += hudExpanded ? " [-]" : " [+]";
                 }
-                graphics.drawString(this.font, SimpleHUDClient.styledText(label), panelX + 8, currentY + 5, enabled ? TEXT_ON : TEXT_OFF, true);
+                graphics.drawString(this.font, SimpleHUDClient.styledText(label), panelX + 8, drawY + 5, enabled ? TEXT_ON : TEXT_OFF, true);
 
-                // Nút gạt viên thuốc bên phải
-                drawToggleSwitch(graphics, panelX + panelWidth - 28, currentY + 4, enabled);
+                float switchAnim = updateSwitchAnim(mod, enabled, dt * 14.0f);
+                drawToggleSwitch(graphics, panelX + panelWidth - 28, drawY + 4, switchAnim);
 
-                currentY += rowHeight;
+                drawY += rowHeight;
 
-                // 3. Menu cài đặt con của HUD
-                if (mod == SimpleHUDClient.MASTER_HUD && hudExpanded) {
+                // 3. Vẽ menu con của HUD với hiệu ứng trượt mượt mà
+                if (mod == SimpleHUDClient.MASTER_HUD && currentSubHeight > 0) {
+                    graphics.enableScissor(panelX, drawY, panelX + panelWidth, drawY + currentSubHeight);
+
+                    int subY = drawY - (fullSubHeight - currentSubHeight);
                     for (SimpleModule sub : SimpleHUDClient.HUD_ELEMENTS) {
                         boolean subEnabled = sub.isEnabled();
-                        boolean subHovered = isHovered(mouseX, mouseY, panelX, currentY, panelWidth, rowHeight);
+                        boolean subHovered = isHovered(mouseX, mouseY, panelX, subY, panelWidth, rowHeight) && hudExpandProgress > 0.95f;
 
-                        graphics.fill(panelX, currentY, panelX + panelWidth, currentY + rowHeight, subHovered ? ROW_HOVER_BG : SUB_BG);
+                        graphics.fill(panelX, subY, panelX + panelWidth, subY + rowHeight, subHovered ? ROW_HOVER_BG : SUB_BG);
                         if (subEnabled) {
-                            graphics.fill(panelX + 4, currentY + 2, panelX + 6, currentY + rowHeight - 2, NEON_GREEN);
+                            graphics.fill(panelX + 4, subY + 2, panelX + 6, subY + rowHeight - 2, NEON_GREEN);
                         }
 
-                        graphics.drawString(this.font, SimpleHUDClient.styledText(sub.getName().toUpperCase()), panelX + 13, currentY + 5, subEnabled ? TEXT_ON : TEXT_OFF, true);
-                        drawToggleSwitch(graphics, panelX + panelWidth - 28, currentY + 4, subEnabled);
-                        currentY += rowHeight;
+                        graphics.drawString(this.font, SimpleHUDClient.styledText(sub.getName().toUpperCase()), panelX + 13, subY + 5, subEnabled ? TEXT_ON : TEXT_OFF, true);
+                        float subAnim = updateSwitchAnim(sub, subEnabled, dt * 14.0f);
+                        drawToggleSwitch(graphics, panelX + panelWidth - 28, subY + 4, subAnim);
+                        subY += rowHeight;
                     }
 
                     // Thanh chỉnh Scale
-                    graphics.fill(panelX, currentY, panelX + panelWidth, currentY + rowHeight, SUB_BG);
+                    graphics.fill(panelX, subY, panelX + panelWidth, subY + rowHeight, SUB_BG);
                     String scaleStr = String.format(java.util.Locale.US, "SCALE: %.2fX", SimpleHUDClient.hudScale);
-                    graphics.drawString(this.font, SimpleHUDClient.styledText(scaleStr), panelX + 13, currentY + 5, TEXT_OFF, true);
-                    graphics.drawString(this.font, SimpleHUDClient.styledText("[-]  [+]"), panelX + panelWidth - 44, currentY + 5, TEXT_ON, true);
-                    currentY += rowHeight;
+                    graphics.drawString(this.font, SimpleHUDClient.styledText(scaleStr), panelX + 13, subY + 5, TEXT_OFF, true);
+                    graphics.drawString(this.font, SimpleHUDClient.styledText("[-]  [+]"), panelX + panelWidth - 44, subY + 5, TEXT_ON, true);
+                    subY += rowHeight;
 
                     // Thanh chỉnh Radius
-                    graphics.fill(panelX, currentY, panelX + panelWidth, currentY + rowHeight, SUB_BG);
+                    graphics.fill(panelX, subY, panelX + panelWidth, subY + rowHeight, SUB_BG);
                     String radStr = "RADIUS: " + SimpleHUDClient.cornerRadius + "PX";
-                    graphics.drawString(this.font, SimpleHUDClient.styledText(radStr), panelX + 13, currentY + 5, TEXT_OFF, true);
-                    graphics.drawString(this.font, SimpleHUDClient.styledText("[-]  [+]"), panelX + panelWidth - 44, currentY + 5, TEXT_ON, true);
-                    currentY += rowHeight;
+                    graphics.drawString(this.font, SimpleHUDClient.styledText(radStr), panelX + 13, subY + 5, TEXT_OFF, true);
+                    graphics.drawString(this.font, SimpleHUDClient.styledText("[-]  [+]"), panelX + panelWidth - 44, subY + 5, TEXT_ON, true);
+
+                    graphics.disableScissor();
+                    drawY += currentSubHeight;
                 }
             }
+
+            graphics.disableScissor();
+            currentY += visibleBodyHeight;
         }
 
-        // Vẽ viền mảnh bao quanh toàn bộ khung
+        // Vẽ viền mảnh bao quanh toàn bộ khung đang co giãn
         graphics.fill(panelX, panelY, panelX + panelWidth, panelY + 1, BORDER_COLOR);
         graphics.fill(panelX, currentY - 1, panelX + panelWidth, currentY, BORDER_COLOR);
         graphics.fill(panelX, panelY, panelX + 1, currentY, BORDER_COLOR);
@@ -123,13 +163,26 @@ public class ClickGuiScreen extends Screen {
 
         super.render(graphics, mouseX, mouseY, delta);
     }
+    private float easeOutCubic(float x) {
+        return 1.0f - (float) Math.pow(1.0f - x, 3.0);
+    }
+
+    private float updateSwitchAnim(SimpleModule mod, boolean enabled, float step) {
+        float current = switchAnimations.getOrDefault(mod, enabled ? 1.0f : 0.0f);
+        float target = enabled ? 1.0f : 0.0f;
+        current += (target - current) * Math.min(1.0f, step);
+        if (Math.abs(target - current) < 0.01f) {
+            current = target;
+        }
+        switchAnimations.put(mod, current);
+        return current;
+    }
+
     private void drawRadarIcon(GuiGraphics graphics, int x, int y) {
-        // Vẽ huy hiệu tròn xanh lá ở góc trái Header giống ảnh mẫu
         graphics.fill(x + 3, y, x + 9, y + 12, ICON_DARK_GREEN);
         graphics.fill(x, y + 3, x + 12, y + 9, ICON_DARK_GREEN);
         graphics.fill(x + 1, y + 1, x + 11, y + 11, ICON_DARK_GREEN);
 
-        // Vòng sáng xanh lá bên ngoài và tâm radar
         graphics.fill(x + 3, y + 1, x + 9, y + 2, NEON_GREEN);
         graphics.fill(x + 3, y + 10, x + 9, y + 11, NEON_GREEN);
         graphics.fill(x + 1, y + 3, x + 2, y + 9, NEON_GREEN);
@@ -138,21 +191,34 @@ public class ClickGuiScreen extends Screen {
         graphics.fill(x + 5, y + 5, x + 7, y + 7, ICON_DARK_GREEN);
     }
 
-    private void drawToggleSwitch(GuiGraphics graphics, int x, int y, boolean enabled) {
+    private void drawToggleSwitch(GuiGraphics graphics, int x, int y, float anim) {
         int width = 20;
         int height = 9;
-        int bg = enabled ? SWITCH_ON_BG : SWITCH_OFF_BG;
+        int bg = blendColorInt(SWITCH_OFF_BG, SWITCH_ON_BG, anim);
 
-        // Vẽ thân viên thuốc bo tròn
         graphics.fill(x + 2, y, x + width - 2, y + height, bg);
         graphics.fill(x, y + 2, x + width, y + height - 2, bg);
         graphics.fill(x + 1, y + 1, x + width - 1, y + height - 1, bg);
 
-        // Vẽ chấm tròn trắng
-        int knobX = enabled ? (x + width - 8) : (x + 1);
+        int knobX = Math.round((x + 1) + (width - 9) * anim);
         int knobY = y + 1;
         graphics.fill(knobX + 1, knobY, knobX + 6, knobY + 7, KNOB_COLOR);
         graphics.fill(knobX, knobY + 1, knobX + 7, knobY + 6, KNOB_COLOR);
+    }
+
+    private int blendColorInt(int c1, int c2, float ratio) {
+        int r1 = (c1 >> 16) & 0xFF;
+        int g1 = (c1 >> 8) & 0xFF;
+        int b1 = c1 & 0xFF;
+
+        int r2 = (c2 >> 16) & 0xFF;
+        int g2 = (c2 >> 8) & 0xFF;
+        int b2 = c2 & 0xFF;
+
+        int r = (int) (r1 + (r2 - r1) * ratio);
+        int g = (int) (g1 + (g2 - g1) * ratio);
+        int b = (int) (b1 + (b2 - b1) * ratio);
+        return new Color(r, g, b, 255).getRGB();
     }
 
     @Override
@@ -161,7 +227,6 @@ public class ClickGuiScreen extends Screen {
         double mouseY = event.y();
         int button = event.button();
 
-        // Xử lý bấm vào thanh tiêu đề (Header)
         if (isHovered(mouseX, mouseY, panelX, panelY, panelWidth, headerHeight)) {
             if (button == 1 || (button == 0 && mouseX >= panelX + panelWidth - 20)) {
                 panelCollapsed = !panelCollapsed;
@@ -174,7 +239,7 @@ public class ClickGuiScreen extends Screen {
             }
         }
 
-        if (panelCollapsed) {
+        if (panelCollapsed || panelOpenProgress < 0.8f) {
             return super.mouseClicked(event, doubleClick);
         }
 
@@ -192,7 +257,7 @@ public class ClickGuiScreen extends Screen {
             }
             currentY += rowHeight;
 
-            if (mod == SimpleHUDClient.MASTER_HUD && hudExpanded) {
+            if (mod == SimpleHUDClient.MASTER_HUD && hudExpanded && hudExpandProgress > 0.8f) {
                 for (SimpleModule sub : SimpleHUDClient.HUD_ELEMENTS) {
                     if (button == 0 && isHovered(mouseX, mouseY, panelX, currentY, panelWidth, rowHeight)) {
                         sub.toggle();
@@ -201,7 +266,6 @@ public class ClickGuiScreen extends Screen {
                     currentY += rowHeight;
                 }
 
-                // Bấm chỉnh Scale
                 if (button == 0 && isHovered(mouseX, mouseY, panelX, currentY, panelWidth, rowHeight)) {
                     if (mouseX >= panelX + panelWidth - 46 && mouseX <= panelX + panelWidth - 24) {
                         SimpleHUDClient.hudScale = Math.max(0.5f, Math.round((SimpleHUDClient.hudScale - 0.05f) * 100.0f) / 100.0f);
@@ -213,7 +277,6 @@ public class ClickGuiScreen extends Screen {
                 }
                 currentY += rowHeight;
 
-                // Bấm chỉnh Radius
                 if (button == 0 && isHovered(mouseX, mouseY, panelX, currentY, panelWidth, rowHeight)) {
                     if (mouseX >= panelX + panelWidth - 46 && mouseX <= panelX + panelWidth - 24) {
                         SimpleHUDClient.cornerRadius = Math.max(0, SimpleHUDClient.cornerRadius - 1);
