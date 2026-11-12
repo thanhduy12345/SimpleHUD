@@ -233,5 +233,79 @@ public class SimpleHUDClient implements ClientModInitializer {
             this.name = name;
             this.enabled = enabled;
         }
+        public String getName() {
+            return name;
+        }
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void toggle() {
+            this.enabled = !this.enabled;
+        }
+    }
+
+    public static class ClickGuiScreen extends Screen {
+        public ClickGuiScreen() {
+            super(Component.literal("SimpleHUD Settings"));
+        }
+
+        @Override
+        protected void init() {
+            int centerX = this.width / 2;
+            int startY = 40;
+
+            for (int i = 0; i < MODULES.size(); i++) {
+                SimpleModule mod = MODULES.get(i);
+                this.addRenderableWidget(Button.builder(
+                        Component.literal(mod.getName() + ": " + (mod.isEnabled() ? "ON" : "OFF")),
+                        button -> {
+                            mod.toggle();
+                            button.setMessage(Component.literal(mod.getName() + ": " + (mod.isEnabled() ? "ON" : "OFF")));
+                        }
+                ).bounds(centerX - 105, startY + i * 24, 100, 20).build());
+            }
+
+            this.addRenderableWidget(Button.builder(
+                    Component.literal("Scale -: " + hudScale + "x"),
+                    button -> {
+                        hudScale = Math.max(0.5f, Math.round((hudScale - 0.1f) * 10f) / 10f);
+                        this.rebuildWidgets();
+                    }
+            ).bounds(centerX + 5, startY, 100, 20).build());
+
+            this.addRenderableWidget(Button.builder(
+                    Component.literal("Scale +: " + hudScale + "x"),
+                    button -> {
+                        hudScale = Math.min(2.0f, Math.round((hudScale + 0.1f) * 10f) / 10f);
+                        this.rebuildWidgets();
+                    }
+            ).bounds(centerX + 5, startY + 24, 100, 20).build());
+
+            this.addRenderableWidget(Button.builder(
+                    Component.literal("Bo góc -: " + cornerRadius + "px"),
+                    button -> {
+                        cornerRadius = Math.max(0, cornerRadius - 1);
+                        this.rebuildWidgets();
+                    }
+            ).bounds(centerX + 5, startY + 56, 100, 20).build());
+
+            this.addRenderableWidget(Button.builder(
+                    Component.literal("Bo góc +: " + cornerRadius + "px"),
+                    button -> {
+                        cornerRadius = Math.min(8, cornerRadius + 1);
+                        this.rebuildWidgets();
+                    }
+            ).bounds(centerX + 5, startY + 80, 100, 20).build());
+        }
+
+        @Override
+        public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+            super.render(graphics, mouseX, mouseY, delta);
+            graphics.drawCenteredString(this.font, "SimpleHUD Configuration", this.width / 2, 18, 0xFF41B9FF);
+        }
+    }
+}
 
                                  
