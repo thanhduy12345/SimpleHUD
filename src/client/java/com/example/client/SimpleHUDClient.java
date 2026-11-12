@@ -125,13 +125,13 @@ public class SimpleHUDClient implements ClientModInitializer {
             graphics.drawString(font, ipComp, 12 + w1 + w2, 28, new Color(210, 210, 210, 255).getRGB());
         }
 
-        // 3. TIME
+                // 3. TIME (Bo tròn hẳn 2 đầu thành hình viên thuốc giống ảnh mẫu)
         if (TIME_HUD.isEnabled()) {
             Component timeComp = styledText(TIME_FORMATTER.format(new Date()));
             int timeW = font.width(timeComp);
             int centerX = screenWidth / 2;
 
-            drawFullRoundedRect(graphics, centerX - (timeW / 2) - 7, 5, centerX + (timeW / 2) + 7, 20, cornerRadius, BG_COLOR);
+            drawFullRoundedRect(graphics, centerX - (timeW / 2) - 8, 5, centerX + (timeW / 2) + 8, 20, 7, BG_COLOR);
             graphics.drawString(font, timeComp, centerX - (timeW / 2), 9, PRIMARY_COLOR.getRGB());
         }
 
