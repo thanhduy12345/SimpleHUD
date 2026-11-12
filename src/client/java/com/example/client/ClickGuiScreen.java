@@ -5,184 +5,239 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 
+import java.awt.Color;
+
 public class ClickGuiScreen extends Screen {
+
     private int panelX = 40;
-    private int panelY = 40;
-    private final int panelWidth = 150;
-    private final int headerHeight = 18;
-    private final int itemHeight = 16;
+    private int panelY = 30;
+    private final int panelWidth = 175;
+    private final int headerHeight = 22;
+    private final int rowHeight = 18;
 
     private boolean isDragging = false;
     private int dragOffsetX = 0;
     private int dragOffsetY = 0;
-
+    private boolean panelCollapsed = false;
     private boolean hudExpanded = false;
+
+    // Bảng màu chuẩn theo mẫu giao diện BASEFINDING
+    private static final int HEADER_BG = new Color(36, 40, 52, 248).getRGB();
+    private static final int PANEL_BG = new Color(46, 51, 66, 242).getRGB();
+    private static final int ROW_HOVER_BG = new Color(54, 60, 77, 245).getRGB();
+    private static final int SUB_BG = new Color(38, 42, 54, 245).getRGB();
+    private static final int BORDER_COLOR = new Color(68, 75, 94, 255).getRGB();
+
+    private static final int TEXT_HEADER = new Color(255, 255, 255, 255).getRGB();
+    private static final int TEXT_OFF = new Color(195, 200, 212, 255).getRGB();
+    private static final int TEXT_ON = new Color(128, 255, 85, 255).getRGB();
+    private static final int NEON_GREEN = new Color(115, 255, 75, 255).getRGB();
+    private static final int ICON_DARK_GREEN = new Color(25, 75, 45, 255).getRGB();
+
+    private static final int SWITCH_OFF_BG = new Color(40, 44, 58, 255).getRGB();
+    private static final int SWITCH_ON_BG = new Color(128, 255, 85, 255).getRGB();
+    private static final int KNOB_COLOR = new Color(255, 255, 255, 255).getRGB();
 
     public ClickGuiScreen() {
         super(Component.literal("SimpleHUD ClickGUI"));
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        if (isDragging) {
-            panelX = mouseX - dragOffsetX;
-            panelY = mouseY - dragOffsetY;
-        }
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+        int currentY = panelY;
 
-        graphics.fill(0, 0, this.width, this.height, 0x60000000);
+        // 1. Vẽ thanh tiêu đề (Header) kèm biểu tượng Radar xanh lá và nút thu gọn (-)
+        graphics.fill(panelX, currentY, panelX + panelWidth, currentY + headerHeight, HEADER_BG);
+        graphics.fill(panelX, currentY + headerHeight - 1, panelX + panelWidth, currentY + headerHeight, BORDER_COLOR);
 
-        graphics.fill(panelX, panelY, panelX + panelWidth, panelY + headerHeight, 0xFF1E1E2E);
-        graphics.fill(panelX, panelY + headerHeight - 1, panelX + panelWidth, panelY + headerHeight, 0xFF55FFFF);
-        graphics.drawString(this.font, "Tiện ích (Render & Misc)", panelX + 6, panelY + 5, 0xFFFFFFFF);
+        drawRadarIcon(graphics, panelX + 7, currentY + 5);
+        graphics.drawString(this.font, SimpleHUDClient.styledText("SIMPLEHUD"), panelX + 23, currentY + 7, TEXT_HEADER, true);
 
-        int currentY = panelY + headerHeight;
+        String collapseSymbol = panelCollapsed ? "+" : "-";
+        graphics.drawString(this.font, SimpleHUDClient.styledText(collapseSymbol), panelX + panelWidth - 13, currentY + 7, TEXT_OFF, true);
 
-        for (SimpleModule module : SimpleHUDClient.MODULES) {
-            boolean isHovered = mouseX >= panelX && mouseX <= panelX + panelWidth
-                    && mouseY >= currentY && mouseY <= currentY + itemHeight;
+        currentY += headerHeight;
 
-            int bgColor;
-            if (module.isEnabled()) {
-                bgColor = isHovered ? 0xDD2A7D80 : 0xDD1F5F60;
-            } else {
-                bgColor = isHovered ? 0xDD383848 : 0xDD252532;
-            }
+        // 2. Vẽ danh sách các Module nếu bảng đang mở
+        if (!panelCollapsed) {
+            for (SimpleModule mod : SimpleHUDClient.MODULES) {
+                boolean enabled = mod.isEnabled();
+                boolean hovered = isHovered(mouseX, mouseY, panelX, currentY, panelWidth, rowHeight);
 
-            graphics.fill(panelX, currentY, panelX + panelWidth, currentY + itemHeight, bgColor);
+                graphics.fill(panelX, currentY, panelX + panelWidth, currentY + rowHeight, hovered ? ROW_HOVER_BG : PANEL_BG);
 
-            int textColor = module.isEnabled() ? 0xFF55FFFF : 0xFFAAAAAA;
-            graphics.drawString(this.font, module.getName(), panelX + 6, currentY + 4, textColor);
-
-            String status = module.isEnabled() ? "ON" : "OFF";
-            if (module == SimpleHUDClient.MASTER_HUD) {
-                status = (hudExpanded ? "▼ " : "▶ ") + status;
-            }
-            int statusWidth = this.font.width(status);
-            graphics.drawString(this.font, status, panelX + panelWidth - statusWidth - 6, currentY + 4, textColor);
-
-            currentY += itemHeight;
-
-            if (module == SimpleHUDClient.MASTER_HUD && hudExpanded) {
-                for (SimpleModule subMod : SimpleHUDClient.HUD_ELEMENTS) {
-                    boolean subHover = mouseX >= panelX && mouseX <= panelX + panelWidth
-                            && mouseY >= currentY && mouseY <= currentY + itemHeight;
-
-                    int subBg = subMod.isEnabled()
-                            ? (subHover ? 0xDD235A66 : 0xDD1A434D)
-                            : (subHover ? 0xDD2E2E3A : 0xDD1C1C24);
-
-                    graphics.fill(panelX, currentY, panelX + panelWidth, currentY + itemHeight, subBg);
-                    graphics.fill(panelX + 4, currentY + 2, panelX + 6, currentY + itemHeight - 2, 0xFF41B9FF);
-
-                    int subTextColor = subMod.isEnabled() ? 0xFF99FFFF : 0xFF888888;
-                    graphics.drawString(this.font, subMod.getName(), panelX + 12, currentY + 4, subTextColor);
-
-                    String subStatus = subMod.isEnabled() ? "ON" : "OFF";
-                    int subStatusW = this.font.width(subStatus);
-                    graphics.drawString(this.font, subStatus, panelX + panelWidth - subStatusW - 6, currentY + 4, subTextColor);
-
-                    currentY += itemHeight;
+                // Thanh dọc màu xanh lá neon sát mép trái khi BẬT
+                if (enabled) {
+                    graphics.fill(panelX, currentY + 1, panelX + 3, currentY + rowHeight - 1, NEON_GREEN);
                 }
 
-                drawAdjustRow(graphics, mouseX, mouseY, currentY, "Scale: " + SimpleHUDClient.hudScale + "x");
-                currentY += itemHeight;
+                String label = mod.getName().toUpperCase();
+                if (mod == SimpleHUDClient.MASTER_HUD) {
+                    label += hudExpanded ? " [-]" : " [+]";
+                }
+                graphics.drawString(this.font, SimpleHUDClient.styledText(label), panelX + 8, currentY + 5, enabled ? TEXT_ON : TEXT_OFF, true);
 
-                drawAdjustRow(graphics, mouseX, mouseY, currentY, "Bo góc: " + SimpleHUDClient.cornerRadius + "px");
-                currentY += itemHeight;
+                // Nút gạt viên thuốc bên phải
+                drawToggleSwitch(graphics, panelX + panelWidth - 28, currentY + 4, enabled);
+
+                currentY += rowHeight;
+
+                // 3. Menu cài đặt con của HUD
+                if (mod == SimpleHUDClient.MASTER_HUD && hudExpanded) {
+                    for (SimpleModule sub : SimpleHUDClient.HUD_ELEMENTS) {
+                        boolean subEnabled = sub.isEnabled();
+                        boolean subHovered = isHovered(mouseX, mouseY, panelX, currentY, panelWidth, rowHeight);
+
+                        graphics.fill(panelX, currentY, panelX + panelWidth, currentY + rowHeight, subHovered ? ROW_HOVER_BG : SUB_BG);
+                        if (subEnabled) {
+                            graphics.fill(panelX + 4, currentY + 2, panelX + 6, currentY + rowHeight - 2, NEON_GREEN);
+                        }
+
+                        graphics.drawString(this.font, SimpleHUDClient.styledText(sub.getName().toUpperCase()), panelX + 13, currentY + 5, subEnabled ? TEXT_ON : TEXT_OFF, true);
+                        drawToggleSwitch(graphics, panelX + panelWidth - 28, currentY + 4, subEnabled);
+                        currentY += rowHeight;
+                    }
+
+                    // Thanh chỉnh Scale
+                    graphics.fill(panelX, currentY, panelX + panelWidth, currentY + rowHeight, SUB_BG);
+                    String scaleStr = String.format(java.util.Locale.US, "SCALE: %.2fX", SimpleHUDClient.hudScale);
+                    graphics.drawString(this.font, SimpleHUDClient.styledText(scaleStr), panelX + 13, currentY + 5, TEXT_OFF, true);
+                    graphics.drawString(this.font, SimpleHUDClient.styledText("[-]  [+]"), panelX + panelWidth - 44, currentY + 5, TEXT_ON, true);
+                    currentY += rowHeight;
+
+                    // Thanh chỉnh Radius
+                    graphics.fill(panelX, currentY, panelX + panelWidth, currentY + rowHeight, SUB_BG);
+                    String radStr = "RADIUS: " + SimpleHUDClient.cornerRadius + "PX";
+                    graphics.drawString(this.font, SimpleHUDClient.styledText(radStr), panelX + 13, currentY + 5, TEXT_OFF, true);
+                    graphics.drawString(this.font, SimpleHUDClient.styledText("[-]  [+]"), panelX + panelWidth - 44, currentY + 5, TEXT_ON, true);
+                    currentY += rowHeight;
+                }
             }
         }
 
-        int totalHeight = currentY - panelY;
-        graphics.renderOutline(panelX, panelY, panelWidth, totalHeight, 0xFF45475A);
+        // Vẽ viền mảnh bao quanh toàn bộ khung
+        graphics.fill(panelX, panelY, panelX + panelWidth, panelY + 1, BORDER_COLOR);
+        graphics.fill(panelX, currentY - 1, panelX + panelWidth, currentY, BORDER_COLOR);
+        graphics.fill(panelX, panelY, panelX + 1, currentY, BORDER_COLOR);
+        graphics.fill(panelX + panelWidth - 1, panelY, panelX + panelWidth, currentY, BORDER_COLOR);
 
-        super.render(graphics, mouseX, mouseY, partialTick);
+        super.render(graphics, mouseX, mouseY, delta);
+    }
+    private void drawRadarIcon(GuiGraphics graphics, int x, int y) {
+        // Vẽ huy hiệu tròn xanh lá ở góc trái Header giống ảnh mẫu
+        graphics.fill(x + 3, y, x + 9, y + 12, ICON_DARK_GREEN);
+        graphics.fill(x, y + 3, x + 12, y + 9, ICON_DARK_GREEN);
+        graphics.fill(x + 1, y + 1, x + 11, y + 11, ICON_DARK_GREEN);
+
+        // Vòng sáng xanh lá bên ngoài và tâm radar
+        graphics.fill(x + 3, y + 1, x + 9, y + 2, NEON_GREEN);
+        graphics.fill(x + 3, y + 10, x + 9, y + 11, NEON_GREEN);
+        graphics.fill(x + 1, y + 3, x + 2, y + 9, NEON_GREEN);
+        graphics.fill(x + 10, y + 3, x + 11, y + 9, NEON_GREEN);
+        graphics.fill(x + 4, y + 4, x + 8, y + 8, NEON_GREEN);
+        graphics.fill(x + 5, y + 5, x + 7, y + 7, ICON_DARK_GREEN);
     }
 
-    private void drawAdjustRow(GuiGraphics graphics, int mouseX, int mouseY, int y, String label) {
-        graphics.fill(panelX, y, panelX + panelWidth, y + itemHeight, 0xDD1A1A22);
-        graphics.fill(panelX + 4, y + 2, panelX + 6, y + itemHeight - 2, 0xFFFFD700);
-        graphics.drawString(this.font, label, panelX + 12, y + 4, 0xFFFFD700);
+    private void drawToggleSwitch(GuiGraphics graphics, int x, int y, boolean enabled) {
+        int width = 20;
+        int height = 9;
+        int bg = enabled ? SWITCH_ON_BG : SWITCH_OFF_BG;
 
-        int plusX = panelX + panelWidth - 18;
-        int minusX = plusX - 18;
+        // Vẽ thân viên thuốc bo tròn
+        graphics.fill(x + 2, y, x + width - 2, y + height, bg);
+        graphics.fill(x, y + 2, x + width, y + height - 2, bg);
+        graphics.fill(x + 1, y + 1, x + width - 1, y + height - 1, bg);
 
-        boolean hoverMinus = mouseX >= minusX && mouseX < plusX && mouseY >= y && mouseY <= y + itemHeight;
-        boolean hoverPlus = mouseX >= plusX && mouseX <= panelX + panelWidth && mouseY >= y && mouseY <= y + itemHeight;
-
-        graphics.fill(minusX, y + 1, plusX - 1, y + itemHeight - 1, hoverMinus ? 0xFF45475A : 0xFF2A2A3A);
-        graphics.drawString(this.font, "-", minusX + 6, y + 4, 0xFFFF77AA);
-
-        graphics.fill(plusX, y + 1, panelX + panelWidth - 2, y + itemHeight - 1, hoverPlus ? 0xFF45475A : 0xFF2A2A3A);
-        graphics.drawString(this.font, "+", plusX + 5, y + 4, 0xFF55FFFF);
+        // Vẽ chấm tròn trắng
+        int knobX = enabled ? (x + width - 8) : (x + 1);
+        int knobY = y + 1;
+        graphics.fill(knobX + 1, knobY, knobX + 6, knobY + 7, KNOB_COLOR);
+        graphics.fill(knobX, knobY + 1, knobX + 7, knobY + 6, KNOB_COLOR);
     }
 
     @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean isDoubleClick) {
-        int button = event.button();
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
         double mouseX = event.x();
         double mouseY = event.y();
+        int button = event.button();
 
-        if (button == 0 && mouseX >= panelX && mouseX <= panelX + panelWidth
-                && mouseY >= panelY && mouseY <= panelY + headerHeight) {
-            isDragging = true;
-            dragOffsetX = (int) mouseX - panelX;
-            dragOffsetY = (int) mouseY - panelY;
-            return true;
+        // Xử lý bấm vào thanh tiêu đề (Header)
+        if (isHovered(mouseX, mouseY, panelX, panelY, panelWidth, headerHeight)) {
+            if (button == 1 || (button == 0 && mouseX >= panelX + panelWidth - 20)) {
+                panelCollapsed = !panelCollapsed;
+                return true;
+            } else if (button == 0) {
+                isDragging = true;
+                dragOffsetX = (int) mouseX - panelX;
+                dragOffsetY = (int) mouseY - panelY;
+                return true;
+            }
+        }
+
+        if (panelCollapsed) {
+            return super.mouseClicked(event, doubleClick);
         }
 
         int currentY = panelY + headerHeight;
 
-        for (SimpleModule module : SimpleHUDClient.MODULES) {
-            if (mouseX >= panelX && mouseX <= panelX + panelWidth
-                    && mouseY >= currentY && mouseY <= currentY + itemHeight) {
+        for (SimpleModule mod : SimpleHUDClient.MODULES) {
+            if (isHovered(mouseX, mouseY, panelX, currentY, panelWidth, rowHeight)) {
                 if (button == 0) {
-                    module.toggle();
+                    mod.toggle();
                     return true;
-                } else if (button == 1 && module == SimpleHUDClient.MASTER_HUD) {
+                } else if (button == 1 && mod == SimpleHUDClient.MASTER_HUD) {
                     hudExpanded = !hudExpanded;
                     return true;
                 }
             }
-            currentY += itemHeight;
+            currentY += rowHeight;
 
-            if (module == SimpleHUDClient.MASTER_HUD && hudExpanded) {
-                for (SimpleModule subMod : SimpleHUDClient.HUD_ELEMENTS) {
-                    if (button == 0 && mouseX >= panelX && mouseX <= panelX + panelWidth
-                            && mouseY >= currentY && mouseY <= currentY + itemHeight) {
-                        subMod.toggle();
+            if (mod == SimpleHUDClient.MASTER_HUD && hudExpanded) {
+                for (SimpleModule sub : SimpleHUDClient.HUD_ELEMENTS) {
+                    if (button == 0 && isHovered(mouseX, mouseY, panelX, currentY, panelWidth, rowHeight)) {
+                        sub.toggle();
                         return true;
                     }
-                    currentY += itemHeight;
+                    currentY += rowHeight;
                 }
 
-                int plusX = panelX + panelWidth - 18;
-                int minusX = plusX - 18;
-
-                if (button == 0 && mouseY >= currentY && mouseY <= currentY + itemHeight) {
-                    if (mouseX >= minusX && mouseX < plusX) {
-                        SimpleHUDClient.hudScale = Math.max(0.5f, Math.round((SimpleHUDClient.hudScale - 0.1f) * 10f) / 10f);
+                // Bấm chỉnh Scale
+                if (button == 0 && isHovered(mouseX, mouseY, panelX, currentY, panelWidth, rowHeight)) {
+                    if (mouseX >= panelX + panelWidth - 46 && mouseX <= panelX + panelWidth - 24) {
+                        SimpleHUDClient.hudScale = Math.max(0.5f, Math.round((SimpleHUDClient.hudScale - 0.05f) * 100.0f) / 100.0f);
                         return true;
-                    } else if (mouseX >= plusX && mouseX <= panelX + panelWidth) {
-                        SimpleHUDClient.hudScale = Math.min(2.0f, Math.round((SimpleHUDClient.hudScale + 0.1f) * 10f) / 10f);
+                    } else if (mouseX > panelX + panelWidth - 24) {
+                        SimpleHUDClient.hudScale = Math.min(2.0f, Math.round((SimpleHUDClient.hudScale + 0.05f) * 100.0f) / 100.0f);
                         return true;
                     }
                 }
-                currentY += itemHeight;
+                currentY += rowHeight;
 
-                if (button == 0 && mouseY >= currentY && mouseY <= currentY + itemHeight) {
-                    if (mouseX >= minusX && mouseX < plusX) {
+                // Bấm chỉnh Radius
+                if (button == 0 && isHovered(mouseX, mouseY, panelX, currentY, panelWidth, rowHeight)) {
+                    if (mouseX >= panelX + panelWidth - 46 && mouseX <= panelX + panelWidth - 24) {
                         SimpleHUDClient.cornerRadius = Math.max(0, SimpleHUDClient.cornerRadius - 1);
                         return true;
-                    } else if (mouseX >= plusX && mouseX <= panelX + panelWidth) {
+                    } else if (mouseX > panelX + panelWidth - 24) {
                         SimpleHUDClient.cornerRadius = Math.min(8, SimpleHUDClient.cornerRadius + 1);
                         return true;
                     }
                 }
-                currentY += itemHeight;
+                currentY += rowHeight;
             }
         }
 
-        return super.mouseClicked(event, isDoubleClick);
+        return super.mouseClicked(event, doubleClick);
+    }
+
+    @Override
+    public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
+        if (isDragging && event.button() == 0) {
+            panelX = (int) event.x() - dragOffsetX;
+            panelY = (int) event.y() - dragOffsetY;
+            return true;
+        }
+        return super.mouseDragged(event, deltaX, deltaY);
     }
 
     @Override
@@ -192,13 +247,19 @@ public class ClickGuiScreen extends Screen {
         }
         return super.mouseReleased(event);
     }
+
     @Override
     public void removed() {
         SimpleHUDClient.saveConfig();
         super.removed();
     }
+
     @Override
     public boolean isPauseScreen() {
         return false;
+    }
+
+    private boolean isHovered(double mouseX, double mouseY, int x, int y, int width, int height) {
+        return mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height;
     }
 }
