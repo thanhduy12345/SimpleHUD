@@ -216,4 +216,55 @@ public class SimpleHUDClient implements ClientModInitializer {
 
                 drawFullRoundedRect(graphics, boxLeft, rightY, boxRight, rightY + boxHeight, cornerRadius, BG_COLOR);
                 graphics.drawString(font, nameComp, boxLeft + 4, rightY + 3, color);
+                int lineEndY = (i == total - 1) ? (rightY + boxHeight) : (rightY + boxHeight + gap);
+                graphics.fill(barLeft, rightY, barRight, lineEndY, color);
+
+                rightY += boxHeight + gap;
+            }
+        }
+
+        graphics.pose().popMatrix();
+    }
+
+    private void drawFullRoundedRect(GuiGraphics graphics, int x1, int y1, int x2, int y2, int radius, int color) {
+        int width = x2 - x1;
+        int height = y2 - y1;
+        int r = Math.min(radius, Math.min(width / 2, height / 2));
+
+        if (r <= 0) {
+            graphics.fill(x1, y1, x2, y2, color);
+            return;
+        }
+
+        graphics.fill(x1 + r, y1, x2 - r, y2, color);
+        graphics.fill(x1, y1 + r, x1 + r, y2 - r, color);
+        graphics.fill(x2 - r, y1 + r, x2, y2 - r, color);
+
+        for (int i = 0; i < r; i++) {
+            double dy = r - i - 0.5;
+            int dx = (int) Math.round(r - Math.sqrt(Math.max(0, r * r - dy * dy)));
+            graphics.fill(x1 + dx, y1 + i, x1 + r, y1 + i + 1, color);
+            graphics.fill(x2 - r, y1 + i, x2 - dx, y1 + i + 1, color);
+            graphics.fill(x1 + dx, y2 - i - 1, x1 + r, y2 - i, color);
+            graphics.fill(x2 - r, y2 - i - 1, x2 - dx, y2 - i, color);
+        }
+    }
+
+    private String getPingInfo(Minecraft client) {
+        if (client.player != null && client.getConnection() != null) {
+            PlayerInfo entry = client.getConnection().getPlayerInfo(client.player.getUUID());
+            if (entry != null) {
+                return "PING: " + entry.getLatency() + "MS  ";
+            }
+        }
+        return "PING: 0MS  ";
+    }
+
+    private Color blendColors(Color c1, Color c2, float ratio) {
+        int r = Mth.clamp((int) (c1.getRed() + (c2.getRed() - c1.getRed()) * ratio), 0, 255);
+        int g = Mth.clamp((int) (c1.getGreen() + (c2.getGreen() - c1.getGreen()) * ratio), 0, 255);
+        int b = Mth.clamp((int) (c1.getBlue() + (c2.getBlue() - c1.getBlue()) * ratio), 0, 255);
+        return new Color(r, g, b, 255);
+    }
+}
 
